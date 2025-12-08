@@ -42,12 +42,12 @@ function checkSession() {
     // refreshRoomList doit être défini dans le fichier spécifique
     if (typeof refreshRoomList === "function") {
       refreshRoomList();
-      setInterval(() => {
+      /* setInterval(() => {
         const home = document.getElementById("screen-home");
         if (home && home.classList.contains("active")) {
           refreshRoomList();
         }
-      }, 5000);
+      }, 5000); */
     }
   }
 }
