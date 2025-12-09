@@ -50,6 +50,54 @@ function generateDeck()
     return $deck;
 }
 
+function generatePieces()
+{
+    $board = ['white' => [], 'black' => []];
+    $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    $pieceOrder = [
+        "rook",
+        "knight",
+        "bishop",
+        "queen",
+        "king",
+        "bishop",
+        "knight",
+        "rook",
+    ];
+    $i = 0;
+    // Populate white pieces (rank 1) and white pawns (rank 2)
+    foreach ($letters as $letter) {
+        $board['white'][] = [
+            'type' => $pieceOrder[$i],
+            'color' => 'white',
+            'position' => $letter . '-1'
+        ];
+        $board['white'][] = [
+            'type' => 'pawn',
+            'color' => 'white',
+            'position' => $letter . '-2'
+        ];
+        $i++;
+    }
+
+    // Populate black pieces (rank 8) and black pawns (rank 7)
+    $i = 0;
+    foreach ($letters as $letter) {
+        $board['black'][] = [
+            'type' => $pieceOrder[$i],
+            'color' => 'black',
+            'position' => $letter . '-8'
+        ];
+        $board['black'][] = [
+            'type' => 'pawn',
+            'color' => 'black',
+            'position' => $letter . '-7'
+        ];
+        $i++;
+    }
+
+    return $board;
+}
 // --- ROUTER ---
 
 $action = $_REQUEST['action'] ?? '';
@@ -68,8 +116,9 @@ switch ($action) {
             'id' => $roomId,
             'admin' => $name,
             'status' => 'lobby',
-            'players' => [['name' => $name, 'pieces' => []]],
+            'players' => [['name' => $name, 'color' => "", 'pieces' => []]],
             'table' => [],
+            'pieces' => generatePieces(),
             'turnIndex' => 0,
             'lastUpdate' => time()
         ];
@@ -124,15 +173,28 @@ switch ($action) {
                 return null;
             }
 
+            $firstPlayerIndex = rand(0, count($json['players']) - 1);
             $json['table'] = [];
             $json['status'] = 'playing';
-            $json['turnIndex'] = 0;
+            $json['turnIndex'] = $firstPlayerIndex;
 
-            // Distribution (7 cartes)
-            /* foreach ($json['players'] as &$p) {
-                $p['hand'] = array_splice($deck, 0, 7);
+            // des pieces aux joueurs
+            $i = 0;
+            foreach ($json['players'] as &$p) {
+                if ($i === $firstPlayerIndex) {
+                    $p['pieces'] = array_filter($json['pieces']['white'], function ($piece) {
+                        return $piece['color'] === 'white';
+                    });
+                    $p['color'] = 'white';
+                } else {
+                    $p['pieces'] = array_filter($json['pieces']['black'], function ($piece) {
+                        return $piece['color'] === 'black';
+                    });
+                    $p['color'] = 'black';
+                }
+                $i++;
             }
-            $json['deck'] = $deck; */
+
 
             echo json_encode(['success' => true]);
             return $json;

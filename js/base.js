@@ -222,18 +222,112 @@ function continueGame() {
 
 function renderGame(data) {
   // Sécurité index
-  let game = new Chess();
-  game.renderBoard();
-  /* if (myIndex === null) {
+
+  if (myIndex === null) {
     data.players.forEach((p, i) => {
       if (p.name === myName) myIndex = i;
     });
   }
 
   const playerCount = data.players.length;
+  const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  const numbers = [8, 7, 6, 5, 4, 3, 2, 1];
+  const firstColor = "rgba(255, 255, 255, 1)";
+  const secondColor = "rgba(147, 96, 8, 1)";
+  const tabDraw = {
+    pawn: "♟",
+    rook: "♜",
+    knight: "♞",
+    bishop: "♝",
+    queen: "♛",
+    king: "♚",
+  };
+
+  const boardHTML = document.getElementById("game-container");
+  const announcer = document.getElementById("game-announcer");
+  boardHTML.innerHTML = "";
+  boardHTML.appendChild(announcer);
+
+  // Wrapper that will be centered by CSS
+  const boardWrapper = document.createElement("div");
+  boardWrapper.className = "chess-board";
+
+  let view = "white";
+  if (data.players[myIndex] && data.players[myIndex].color === "black")
+    view = "black";
+
+  const lettersArr =
+    view === "white" ? letters.slice() : letters.slice().reverse();
+  const numbersArr =
+    view === "white"
+      ? numbers.slice(0, 8)
+      : numbers.slice(0, 8).slice().reverse();
+
+  // Création des cases du plateau
+  numbersArr.forEach((num, rowIndex) => {
+    const row = num; // numeric rank
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "chess-row";
+
+    const leftNumberDiv = document.createElement("div");
+    leftNumberDiv.className = "chess-number";
+    leftNumberDiv.innerText = num;
+    rowDiv.appendChild(leftNumberDiv);
+
+    lettersArr.forEach((letter, col) => {
+      const cell = document.createElement("div");
+      cell.className = "chess-cell";
+      cell.id = `cell-${letter}-${row}`;
+
+      // Background color handled by CSS but we keep color logic here
+      if (row % 2 == 0) {
+        cell.style.backgroundColor = col % 2 == 0 ? firstColor : secondColor;
+      } else {
+        cell.style.backgroundColor = col % 2 == 0 ? secondColor : firstColor;
+      }
+
+      addCellClickListener(cell);
+      addCellHoverListener(cell);
+      rowDiv.appendChild(cell);
+    });
+
+    boardWrapper.appendChild(rowDiv);
+  });
+  const bottomRow = document.createElement("div");
+  bottomRow.className = "chess-row";
+
+  // add empty corner to align letters under cells
+
+  lettersArr.forEach((element) => {
+    const letterDiv = document.createElement("div");
+    letterDiv.className = "chess-letter";
+    letterDiv.innerText = element;
+    bottomRow.appendChild(letterDiv);
+  });
+
+  boardWrapper.appendChild(bottomRow);
+
+  boardHTML.appendChild(boardWrapper);
+
+  // Render pieces on the board
+  data.players.forEach((p) => {
+    p.pieces.forEach((piece) => {
+      const pieceElement = document.createElement("div");
+      pieceElement.className = `piece`;
+      pieceElement.textContent = tabDraw[piece.type];
+      pieceElement.style.color = piece.color === "white" ? "#fff" : "#111";
+      pieceElement.style.fontSize = "48px";
+      pieceElement.style.textShadow =
+        piece.color === "white"
+          ? "0 2px 10px rgba(0, 0, 0, 0.8)"
+          : "0 1px 0 rgba(255, 255, 255, 0.05)";
+      const cell = document.getElementById(`cell-${piece.position}`);
+      cell.appendChild(pieceElement);
+    });
+  });
 
   // A. MA MAIN
-  const handDiv = document.getElementById("my-hand");
+  /* const handDiv = document.getElementById("my-hand");
   handDiv.innerHTML = "";
   if (data.players[myIndex] && data.players[myIndex].hand) {
     data.players[myIndex].hand.forEach((card) => {
@@ -275,12 +369,12 @@ function renderGame(data) {
       let cDiv = createCard(play.card);
       document.getElementById(slotId).appendChild(cDiv);
     }
-  }); */
+  });  */
 
   // C. STATUT
   let statusText = `Tour de : ${data.players[data.turnIndex].name}`;
   if (data.turnIndex === myIndex) statusText = "🟢 À TOI DE JOUER !";
-  document.getElementById("game-announcer").innerText = statusText;
+  announcer.innerHTML = statusText;
 }
 
 // --- 5. ACTIONS JOUEUR ---

@@ -120,7 +120,7 @@
         <div id="game-container">
             <div id="game-announcer" class="game-announcer">Chargement...</div>
 
-            <div class="table-center">
+            <!-- <div class="table-center">
                 <div id="slot-top" class="card-slot slot-top"></div>
                 <div id="slot-left" class="card-slot slot-left"></div>
                 <div id="slot-right" class="card-slot slot-right"></div>
@@ -135,7 +135,7 @@
             </div>
 
             <div id="my-hand"></div>
-
+ -->
         </div>
 
     </div>
