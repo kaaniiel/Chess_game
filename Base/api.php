@@ -63,12 +63,12 @@ switch ($action) {
         if (!$name)
             exit(json_encode(['error' => 'Pseudo vide']));
 
+
         $gameState = [
             'id' => $roomId,
             'admin' => $name,
             'status' => 'lobby',
-            'players' => [['name' => $name, 'hand' => []]],
-            'deck' => generateDeck(),
+            'players' => [['name' => $name, 'pieces' => []]],
             'table' => [],
             'turnIndex' => 0,
             'lastUpdate' => time()
@@ -85,8 +85,8 @@ switch ($action) {
         processRoom($roomId, function ($json) use ($name) {
             if (!$json)
                 return null;
-            if (count($json['players']) >= 4) {
-                echo json_encode(['error' => 'Salon complet (Max 4)']);
+            if (count($json['players']) > 2) {
+                echo json_encode(['error' => 'Salon complet (Max 2 joueurs)']);
                 return null;
             }
             foreach ($json['players'] as $p)
@@ -95,7 +95,7 @@ switch ($action) {
                     return null;
                 }
 
-            $json['players'][] = ['name' => $name, 'hand' => []];
+            $json['players'][] = ['name' => $name, 'pieces' => []];
             echo json_encode(['success' => true, 'index' => count($json['players']) - 1, 'finalName' => $name]);
             return $json;
         });
@@ -119,7 +119,7 @@ switch ($action) {
     case 'startRound':
         $roomId = $_REQUEST['roomId'];
         processRoom($roomId, function ($json) {
-            if (count($json['players']) < 2) {
+            if (count($json['players']) == 1) {
                 echo json_encode(['error' => 'Pas assez de joueurs']);
                 return null;
             }
@@ -128,13 +128,11 @@ switch ($action) {
             $json['status'] = 'playing';
             $json['turnIndex'] = 0;
 
-            $deck = generateDeck();
-
             // Distribution (7 cartes)
-            foreach ($json['players'] as &$p) {
+            /* foreach ($json['players'] as &$p) {
                 $p['hand'] = array_splice($deck, 0, 7);
             }
-            $json['deck'] = $deck;
+            $json['deck'] = $deck; */
 
             echo json_encode(['success' => true]);
             return $json;

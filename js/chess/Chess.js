@@ -4,13 +4,16 @@ class Chess {
   #numbers;
   #firstColor;
   #secondColor;
+  #player1;
+  #player2;
 
-  constructor() {
+  constructor(player1, player2) {
     this.#letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
     this.#numbers = [8, 7, 6, 5, 4, 3, 2, 1, " "];
     this.#firstColor = "rgba(255, 255, 255, 1)";
     this.#secondColor = "rgba(147, 96, 8, 1)";
-
+    this.#player1 = player1;
+    this.#player2 = player2;
     // create the board after fields are initialized
     this.#board = this.createBoard();
   }
@@ -52,7 +55,7 @@ class Chess {
     return board;
   }
 
-  renderBoard() {
+  renderBoard(player) {
     // Render the chess board in the UI
     const boardHTML = document.getElementById("game-container");
 
@@ -63,20 +66,35 @@ class Chess {
     const boardWrapper = document.createElement("div");
     boardWrapper.className = "chess-board";
 
-    let indexNumber = 0;
-    for (let row = 8; row > 0; row--) {
+    // Determine view: 'white' (default) or 'black'
+    let view = "white";
+    if (player === "black" || player === this.#player2) view = "black";
+
+    const lettersArr =
+      view === "white"
+        ? this.#letters.slice()
+        : this.#letters.slice().reverse();
+    const numbersArr =
+      view === "white"
+        ? this.#numbers.slice(0, 8)
+        : this.#numbers.slice(0, 8).slice().reverse();
+
+    // Build rows according to orientation
+    numbersArr.forEach((num, rowIndex) => {
+      const row = num; // numeric rank
       const rowDiv = document.createElement("div");
       rowDiv.className = "chess-row";
 
       const leftNumberDiv = document.createElement("div");
       leftNumberDiv.className = "chess-number";
-      leftNumberDiv.innerText = this.#numbers[indexNumber];
+      leftNumberDiv.innerText = num;
       rowDiv.appendChild(leftNumberDiv);
 
-      this.#letters.forEach((letter, col) => {
+      lettersArr.forEach((letter, col) => {
         const cell = document.createElement("div");
         cell.className = "chess-cell";
         cell.id = `cell-${letter}-${row}`;
+
         // Background color handled by CSS but we keep color logic here
         if (row % 2 == 0) {
           cell.style.backgroundColor =
@@ -90,14 +108,18 @@ class Chess {
         addCellHoverListener(cell);
         rowDiv.appendChild(cell);
       });
-      indexNumber++;
 
       boardWrapper.appendChild(rowDiv);
-    }
+    });
     const bottomRow = document.createElement("div");
     bottomRow.className = "chess-row";
 
-    this.#letters.forEach((element) => {
+    // add empty corner to align letters under cells
+    const emptyCorner = document.createElement("div");
+    emptyCorner.className = "chess-number";
+    bottomRow.appendChild(emptyCorner);
+
+    lettersArr.forEach((element) => {
       const letterDiv = document.createElement("div");
       letterDiv.className = "chess-letter";
       letterDiv.innerText = element;

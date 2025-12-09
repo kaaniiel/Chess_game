@@ -6,10 +6,11 @@ const isRed = (s) => ["Coeur", "Carreau"].includes(s);
 // --- 1. INITIALISATION & NAVIGATION ---
 
 window.onload = function () {
-  initGame("base");
+  initGame("chess");
   checkSession();
 };
 
+// afficher l'un des ecrans (lobby, game, etc.)
 function showScreen(id) {
   document
     .querySelectorAll(".screen")
