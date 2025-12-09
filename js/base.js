@@ -41,50 +41,50 @@ function enterLobby(rid, admin) {
 // --- 2. BOUCLE DE JEU (POLLING) ---
 
 function startPolling() {
-  setInterval(() => {
-    if (!myRoomId) return;
+  //setInterval(() => {
+  if (!myRoomId) return;
 
-    fetch(`Base/api.php?action=get&roomId=${myRoomId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data || !data.players) return;
+  fetch(`Base/api.php?action=get&roomId=${myRoomId}`)
+    .then((r) => r.json())
+    .then((data) => {
+      if (!data || !data.players) return;
 
-        // Mise à jour de mon index si nécessaire
-        if (myName) {
-          const me = data.players.find((p) => p.name === myName);
-          if (me) {
-            const newIndex = data.players.indexOf(me);
-            if (newIndex !== myIndex) {
-              myIndex = newIndex;
-              sessionStorage.setItem("belote_index", newIndex);
-            }
+      // Mise à jour de mon index si nécessaire
+      if (myName) {
+        const me = data.players.find((p) => p.name === myName);
+        if (me) {
+          const newIndex = data.players.indexOf(me);
+          if (newIndex !== myIndex) {
+            myIndex = newIndex;
+            sessionStorage.setItem("belote_index", newIndex);
           }
         }
+      }
 
-        // Gestion Admin
-        if (data.admin && myName) {
-          isAdmin = data.admin === myName;
-          document.getElementById("admin-controls").style.display = isAdmin
-            ? "block"
-            : "none";
-          document.getElementById("guest-controls").style.display = isAdmin
-            ? "none"
-            : "block";
-          const sl = document.getElementById("lobby-param-XXXX");
-          if (sl) sl.disabled = !isAdmin;
-        }
+      // Gestion Admin
+      if (data.admin && myName) {
+        isAdmin = data.admin === myName;
+        document.getElementById("admin-controls").style.display = isAdmin
+          ? "block"
+          : "none";
+        document.getElementById("guest-controls").style.display = isAdmin
+          ? "none"
+          : "block";
+        const sl = document.getElementById("lobby-param-XXXX");
+        if (sl) sl.disabled = !isAdmin;
+      }
 
-        // Dispatch selon l'état
-        if (data.status === "lobby") {
-          showScreen("screen-lobby");
-          document.getElementById("score-modal").style.display = "none";
-          updateLobbyUI(data);
-        } else {
-          updateGameUI(data);
-        }
-      })
-      .catch((e) => console.error("Polling error:", e));
-  }, 1000);
+      // Dispatch selon l'état
+      if (data.status === "lobby") {
+        showScreen("screen-lobby");
+        document.getElementById("score-modal").style.display = "none";
+        updateLobbyUI(data);
+      } else {
+        updateGameUI(data);
+      }
+    })
+    .catch((e) => console.error("Polling error:", e));
+  //}, 1000);
 }
 
 // --- 3. LOGIQUE DU LOBBY ---
@@ -221,7 +221,9 @@ function continueGame() {
 
 function renderGame(data) {
   // Sécurité index
-  if (myIndex === null) {
+  let game = new Chess();
+  game.renderBoard();
+  /* if (myIndex === null) {
     data.players.forEach((p, i) => {
       if (p.name === myName) myIndex = i;
     });
@@ -272,7 +274,7 @@ function renderGame(data) {
       let cDiv = createCard(play.card);
       document.getElementById(slotId).appendChild(cDiv);
     }
-  });
+  }); */
 
   // C. STATUT
   let statusText = `Tour de : ${data.players[data.turnIndex].name}`;

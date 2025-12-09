@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,33 +8,37 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <!-- Primary Meta Tags -->
-    <title>Jeu de dingue</title>
+    <title>Jeu d'échec</title>
     <link rel="stylesheet" href="../css/base.css?v=<?= filemtime('../css/base.css') ?>">
     <link rel="stylesheet" href="../css/games.css?v=<?= filemtime('../css/games.css') ?>">
     <link rel="stylesheet" href="../css/cartes.css?v=<?= filemtime('../css/cartes.css') ?>">
     <script src="../js/room.js?v=<?= filemtime('../js/room.js') ?>" defer></script>
-    <meta name="title" content="Jeu de dingue" />
-    <meta name="description" content="Jouez à Jeu de dingue en ligne avec vos amis. Créez ou rejoignez une table privée et profitez d'une expérience de jeu classique et conviviale." />
+    <meta name="title" content="Jeu d'échec" />
+    <meta name="description"
+        content="Jouez à Jeu d'échec en ligne avec vos amis. Créez ou rejoignez une table privée et profitez d'une expérience de jeu classique et conviviale." />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://polifra.fr/Jeux/Dingo/" />
-    <meta property="og:title" content="Jeu de dingue" />
-    <meta property="og:description" content="Jouez à Jeu de dingue en ligne avec vos amis. Créez ou rejoignez une table privée et profitez d'une expérience de jeu classique et conviviale." />
+    <meta property="og:url" content="https://polifra.fr/Jeux/Echec/" />
+    <meta property="og:title" content="Jeu d'échec" />
+    <meta property="og:description"
+        content="Jouez à Jeu d'échec en ligne avec vos amis. Créez ou rejoignez une table privée et profitez d'une expérience de jeu classique et conviviale." />
 </head>
+
 <body>
     <div id="screen-home" class="screen active">
-        <a href="../../" style="position:absolute; top:20px; left:20px; color:white; text-decoration:none; font-weight:bold; background:rgba(0,0,0,0.4); padding:10px 15px; border-radius:8px; z-index:100; display:flex; align-items:center; gap:8px; transition: background 0.3s;">
+        <a href="../../"
+            style="position:absolute; top:20px; left:20px; color:white; text-decoration:none; font-weight:bold; background:rgba(0,0,0,0.4); padding:10px 15px; border-radius:8px; z-index:100; display:flex; align-items:center; gap:8px; transition: background 0.3s;">
             <i class="fas fa-arrow-left"></i> Retour aux Jeux
         </a>
         <div class="home-container">
             <!-- Panneau Gauche : Actions -->
             <div class="home-panel action-panel">
                 <div class="logo-area">
-                    <h1>Jeu de dingue</h1>
-                    <p>Le jeu de cartes classique en ligne</p>
+                    <h1>Jeu d'échec</h1>
+                    <p>Le jeu d'échec classique en ligne</p>
                 </div>
-                
+
                 <div class="input-group">
                     <label>Votre Pseudo</label>
                     <input type="text" id="username" placeholder="Ex: Marcel">
@@ -79,13 +84,13 @@
 
                 <div class="settings-section">
                     <h3>Paramètres</h3>
-                    
+
                     <div class="setting-row">
                         <label></label>
                         <select id="lobby-param-XXXX" disabled>
-                            <option value="X">X</option>
+                            <!-- <option value="X">X</option>
                             <option value="XX" selected>XX</option>
-                            <option value="XXX">XXX</option>
+                            <option value="XXX">XXX</option> -->
                         </select>
                     </div>
                 </div>
@@ -93,26 +98,28 @@
 
             <div class="lobby-footer">
                 <div id="admin-controls" style="display:none;">
-                    <button onclick="launchGame()" id="btn-launch" class="btn-green" disabled>EN ATTENTE DES JOUEURS...</button>
+                    <button onclick="launchGame()" id="btn-launch" class="btn-green" disabled>EN ATTENTE DES
+                        JOUEURS...</button>
                 </div>
                 <div id="guest-controls">
                     <div class="waiting-spinner"></div>
                     <p>En attente du chef de table...</p>
                 </div>
-                
+
                 <button onclick="leaveLobby()" class="btn-red" style="margin-top: 15px;">Quitter le salon</button>
             </div>
         </div>
     </div>
 
     <div id="screen-game" class="screen">
-        <button class="btn-red" style="padding: 8px 12px; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.3);" onclick="backToLobby()">
+        <button class="btn-red" style="padding: 8px 12px; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"
+            onclick="backToLobby()">
             <i class="fas fa-arrow-left"></i> Salon
         </button>
 
         <div id="game-container">
             <div id="game-announcer" class="game-announcer">Chargement...</div>
-            
+
             <div class="table-center">
                 <div id="slot-top" class="card-slot slot-top"></div>
                 <div id="slot-left" class="card-slot slot-left"></div>
@@ -121,15 +128,21 @@
             </div>
 
             <div id="players-area">
-                <div id="player-0"></div> <div id="player-1"></div> <div id="player-2"></div> <div id="player-3"></div> </div>
+                <div id="player-0"></div>
+                <div id="player-1"></div>
+                <div id="player-2"></div>
+                <div id="player-3"></div>
+            </div>
 
             <div id="my-hand"></div>
-        
+
         </div>
-        
+
     </div>
-    
-    <div id="score-modal"><div id="score-content"></div></div>
+
+    <div id="score-modal">
+        <div id="score-content"></div>
+    </div>
 
     <!-- POPUP D'ERREUR PERSONNALISÉE -->
     <div id="error-modal" class="modal-overlay">
@@ -155,5 +168,8 @@
     </div>
 
     <script src="../js/base.js?v=<?= filemtime('../js/base.js') ?>"></script>
+    <script src="../js/chess/Chess.js?v=<?= filemtime('../js/chess/Chess.js') ?>"></script>
+    <script src="../js/chess/listeners.js?v=<?= filemtime('../js/chess/listeners.js') ?>"></script>
 </body>
+
 </html>
