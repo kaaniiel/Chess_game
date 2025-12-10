@@ -275,6 +275,9 @@ function renderGame(data) {
       addCellClickListener(cell);
       addCellHoverListener(cell);
       addCellRightClickListener(cell);
+      cell.data = {};
+      cell.data["xpos"] = letter;
+      cell.data["ypos"] = row;
       rowDiv.appendChild(cell);
     });
 
@@ -309,6 +312,7 @@ function renderGame(data) {
           ? "0 2px 10px rgba(0, 0, 0, 0.8)"
           : "0 1px 0 rgba(255, 255, 255, 0.05)";
       const cell = document.getElementById(`cell-${piece.position}`);
+      cell.data["piece"] = piece;
       cell.appendChild(pieceElement);
     });
   });
