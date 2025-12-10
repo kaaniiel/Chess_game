@@ -12,7 +12,9 @@ window.onload = function () {
 
 // afficher l'un des ecrans (lobby, game, etc.)
 function showScreen(id) {
-  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  document
+    .querySelectorAll(".screen")
+    .forEach((s) => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
@@ -29,7 +31,9 @@ function enterLobby(rid, admin) {
   // Handlers des paramètres (Admin seulement)
   const scoreSel = document.getElementById("lobby-param-XXXX");
   scoreSel.onchange = function () {
-    fetch(`Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`);
+    fetch(
+      `Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`
+    );
   };
 
   startPolling();
@@ -61,8 +65,12 @@ function startPolling() {
       // Gestion Admin
       if (data.admin && myName) {
         isAdmin = data.admin === myName;
-        document.getElementById("admin-controls").style.display = isAdmin ? "block" : "none";
-        document.getElementById("guest-controls").style.display = isAdmin ? "none" : "block";
+        document.getElementById("admin-controls").style.display = isAdmin
+          ? "block"
+          : "none";
+        document.getElementById("guest-controls").style.display = isAdmin
+          ? "none"
+          : "block";
         const sl = document.getElementById("lobby-param-XXXX");
         if (sl) sl.disabled = !isAdmin;
       }
@@ -147,7 +155,8 @@ function updateLobbyUI(d) {
   // Update des paramètres
 
   const scoreSel = document.getElementById("lobby-param-XXXX");
-  if (scoreSel && document.activeElement !== scoreSel && d.param) scoreSel.value = d.param;
+  if (scoreSel && document.activeElement !== scoreSel && d.param)
+    scoreSel.value = d.param;
 
   // Bouton Lancer (Admin seulement)
   if (isAdmin) {
@@ -244,10 +253,15 @@ function renderGame(data) {
   boardWrapper.className = "chess-board";
 
   let view = "white";
-  if (data.players[myIndex] && data.players[myIndex].color === "black") view = "black";
+  if (data.players[myIndex] && data.players[myIndex].color === "black")
+    view = "black";
 
-  const lettersArr = view === "white" ? letters.slice() : letters.slice().reverse();
-  const numbersArr = view === "white" ? numbers.slice(0, 8) : numbers.slice(0, 8).slice().reverse();
+  const lettersArr =
+    view === "white" ? letters.slice() : letters.slice().reverse();
+  const numbersArr =
+    view === "white"
+      ? numbers.slice(0, 8)
+      : numbers.slice(0, 8).slice().reverse();
 
   // Création des cases du plateau
   numbersArr.forEach((num, rowIndex) => {
@@ -272,12 +286,12 @@ function renderGame(data) {
         cell.style.backgroundColor = col % 2 == 0 ? secondColor : firstColor;
       }
 
-      addCellClickListener(cell);
       addCellHoverListener(cell);
       addCellRightClickListener(cell);
       cell.data = {};
       cell.data["xpos"] = letter;
       cell.data["ypos"] = row;
+      addCellClickListener(cell, null);
       rowDiv.appendChild(cell);
     });
 
@@ -312,55 +326,15 @@ function renderGame(data) {
           ? "0 2px 10px rgba(0, 0, 0, 0.8)"
           : "0 1px 0 rgba(255, 255, 255, 0.05)";
       const cell = document.getElementById(`cell-${piece.position}`);
+      if (data.turnIndex === myIndex) {
+        if (piece.color === data.players[myIndex].color) {
+          addCellClickListener(cell, piece.color);
+        }
+      }
       cell.data["piece"] = piece;
       cell.appendChild(pieceElement);
     });
   });
-
-  // A. MA MAIN
-  /* const handDiv = document.getElementById("my-hand");
-  handDiv.innerHTML = "";
-  if (data.players[myIndex] && data.players[myIndex].hand) {
-    data.players[myIndex].hand.forEach((card) => {
-      let cDiv = createCard(card);
-      cDiv.onclick = () => playCard(card.id);
-      handDiv.appendChild(cDiv);
-    });
-  }
-
-  // B. TABLE (Cartes jouées)
-  // Reset des slots
-  ["slot-bottom", "slot-left", "slot-top", "slot-right"].forEach((id) => {
-    document.getElementById(id).innerHTML = "";
-  });
-
-  // Définition des positions visuelles selon le nombre de joueurs
-  // Relatif 0 = Moi (Bottom)
-  // Relatif 1, 2, 3 dépendent du nombre total
-  const slotMap = { 0: "slot-bottom" };
-
-  if (playerCount === 2) {
-    slotMap[1] = "slot-top"; // L'adversaire est en face
-  } else if (playerCount === 3) {
-    slotMap[1] = "slot-left";
-    slotMap[2] = "slot-right";
-  } else {
-    slotMap[1] = "slot-left";
-    slotMap[2] = "slot-top";
-    slotMap[3] = "slot-right";
-  }
-
-  data.table.forEach((play) => {
-    // Calcul de l'index relatif (0 à N-1) par rapport à moi
-    let relativeIndex =
-      (play.playerIndex - myIndex + playerCount) % playerCount;
-
-    let slotId = slotMap[relativeIndex];
-    if (slotId) {
-      let cDiv = createCard(play.card);
-      document.getElementById(slotId).appendChild(cDiv);
-    }
-  });  */
 
   // C. STATUT
   let statusText = `Tour de : ${data.players[data.turnIndex].name}`;
@@ -375,7 +349,9 @@ function launchGame() {
 }
 
 function playCard(cid) {
-  fetch(`Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&cardId=${cid}`);
+  fetch(
+    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&cardId=${cid}`
+  );
 }
 
 function backToLobby() {
@@ -410,7 +386,9 @@ function createCard(c) {
   const suitSym = suitSymbols[c.suit];
 
   let d = document.createElement("div");
-  d.className = `card ${isRed(c.suit) ? "red" : "black"} ${isFace ? "face-card" : ""}`;
+  d.className = `card ${isRed(c.suit) ? "red" : "black"} ${
+    isFace ? "face-card" : ""
+  }`;
   d.setAttribute("data-id", c.id);
 
   // Structure HTML réaliste : Coin Haut-Gauche + Centre + Coin Bas-Droit

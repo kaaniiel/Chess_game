@@ -261,13 +261,16 @@
   border-radius: 6px;
   padding: 6px 6px 2px 6px; /* top right bottom left - larger bottom padding for letters */
   background: transparent;
+  cursor: default;
+  /* Retirer la selection de texte */
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .chess-board .chess-row {
   margin-bottom: 0; /* no extra space between rows */
 }
 
 .hachure {
-  
   background-image: repeating-linear-gradient(
     45deg,
     rgba(255, 0, 0, 0.6),
@@ -275,4 +278,13 @@
     transparent 5px,
     transparent 10px
   );
+}
+
+.canBeSelected {
+  /* faire un petit cercle au centre de la case */
+  background-color: green;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  margin: auto;
 }
