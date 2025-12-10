@@ -19,3 +19,15 @@ function addCellHoverListener(cellElement) {
     cellElement.style.border = "none";
   });
 }
+
+function addCellRightClickListener(cellElement) {
+  cellElement.addEventListener("contextmenu", (event) => {
+    // ajouter la classes hachure
+    event.preventDefault();
+    if (cellElement.className.includes("hachure")) {
+      cellElement.className = cellElement.className.replace(" hachure", "");
+      return;
+    }
+    cellElement.className += " hachure";
+  });
+}
