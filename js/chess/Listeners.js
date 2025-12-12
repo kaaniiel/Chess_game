@@ -9,7 +9,11 @@ function addCellClickListener(cellElement, color) {
           console.log(
             `cell selected for move: (${element.data["xpos"]}, ${element.data["ypos"]}) to (${cellElement.id})`
           );
-          movePiece(`cell-${element.data["xpos"]}-${element.data["ypos"]}`, cellElement.id); // Call the function to move the piece in base.js
+          playPiece(
+            `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
+            cellElement.id,
+            element.data["piece"]
+          ); // Call the function to move the piece in base.js
           return;
         }
       });
@@ -26,11 +30,11 @@ function addCellClickListener(cellElement, color) {
     }
 
     console.log(`Cell clicked: (${cellElement.id})`);
-    const piece = cellElement.data["piece"];
+    const pieceName = cellElement.data["piece"];
     const xpos = cellElement.data["xpos"]; // letter
     const ypos = cellElement.data["ypos"]; // number
 
-    computePossibleMoves(piece, xpos, ypos);
+    computePossibleMoves(pieceName, xpos, ypos, color);
   });
 }
 
@@ -74,20 +78,20 @@ function generateCandidate(originId, piece, xpos, ypos) {
   return false;
 }
 
-function computePossibleMoves(piece, xpos, ypos) {
-  switch (piece.type) {
+function computePossibleMoves(pieceName, xpos, ypos, color) {
+  switch (pieceName) {
     case "pawn":
       if (ypos === 2) {
         for (let i = 3; i <= 4; i++) {
-          generateCandidate(`cell-${xpos}-${i}`, piece, xpos, ypos);
+          generateCandidate(`cell-${xpos}-${i}`, pieceName, xpos, ypos);
         }
       } else if (ypos === 7) {
         for (let i = 6; i >= 5; i--) {
-          generateCandidate(`cell-${xpos}-${i}`, piece, xpos, ypos);
+          generateCandidate(`cell-${xpos}-${i}`, pieceName, xpos, ypos);
         }
       } else {
         const direction = color === "white" ? 1 : -1;
-        generateCandidate(`cell-${xpos}-${ypos + direction}`, piece, xpos, ypos);
+        generateCandidate(`cell-${xpos}-${ypos + direction}`, pieceName, xpos, ypos);
       }
       break;
 

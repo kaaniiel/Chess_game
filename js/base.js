@@ -300,25 +300,30 @@ function renderGame(data) {
   boardHTML.appendChild(boardWrapper);
 
   // Render pieces on the board
+  lstPieces = ["pawn", "rook", "knight", "bishop", "queen", "king"];
   data.players.forEach((p) => {
-    p.pieces.forEach((piece) => {
-      const pieceElement = document.createElement("div");
-      pieceElement.className = `piece`;
-      pieceElement.textContent = tabDraw[piece.type];
-      pieceElement.style.color = piece.color === "white" ? "#fff" : "#111";
-      pieceElement.style.fontSize = "48px";
-      pieceElement.style.textShadow =
-        piece.color === "white"
-          ? "0 2px 10px rgba(0, 0, 0, 0.8)"
-          : "0 1px 0 rgba(255, 255, 255, 0.05)";
-      const cell = document.getElementById(`cell-${piece.position}`);
-      if (data.turnIndex === myIndex) {
-        if (piece.color === data.players[myIndex].color) {
-          addCellClickListener(cell, piece.color);
+    lstPieces.forEach((pieceName) => {
+      p.pieces[pieceName].forEach((piece) => {
+        const pieceElement = document.createElement("div");
+        pieceElement.className = `piece`;
+        pieceElement.textContent = tabDraw[pieceName];
+        pieceElement.style.color = p.color === "white" ? "#fff" : "#111";
+        pieceElement.style.fontSize = "48px";
+        pieceElement.style.textShadow =
+          p.color === "white"
+            ? "0 2px 10px rgba(0, 0, 0, 0.8)"
+            : "0 1px 0 rgba(255, 255, 255, 0.05)";
+        const cell = document.getElementById(`cell-${piece.position}`);
+        if (data.turnIndex === myIndex) {
+          if (p.color === data.players[myIndex].color) {
+            addCellClickListener(cell, p.color);
+          }
         }
-      }
-      cell.data["piece"] = piece;
-      cell.appendChild(pieceElement);
+        cell.data["piece"] = pieceName;
+        cell.data["color"] = p.color;
+        cell.data["position"] = piece.position;
+        cell.appendChild(pieceElement);
+      });
     });
   });
 
@@ -334,9 +339,12 @@ function launchGame() {
   fetch(`Base/api.php?action=startRound&roomId=${myRoomId}`);
 }
 
-function playPiece(originCellId, destinationCellId) {
+function playPiece(originCellId, destinationCellId, pieceName) {
+  console.log(
+    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}&pieceName=${pieceName}`
+  );
   fetch(
-    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}`
+    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}`
   );
 }
 
