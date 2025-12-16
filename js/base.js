@@ -1,5 +1,5 @@
 let lastStateStr = "";
-
+let lastUpdateTime = 0;
 const suitSymbols = { Coeur: "♥", Carreau: "♦", Trefle: "♣", Pique: "♠" };
 const isRed = (s) => ["Coeur", "Carreau"].includes(s);
 
@@ -12,7 +12,9 @@ window.onload = function () {
 
 // afficher l'un des ecrans (lobby, game, etc.)
 function showScreen(id) {
-  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  document
+    .querySelectorAll(".screen")
+    .forEach((s) => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
@@ -29,7 +31,9 @@ function enterLobby(rid, admin) {
   // Handlers des paramètres (Admin seulement)
   const scoreSel = document.getElementById("lobby-param-XXXX");
   scoreSel.onchange = function () {
-    fetch(`Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`);
+    fetch(
+      `Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`
+    );
   };
 
   startPolling();
@@ -38,46 +42,54 @@ function enterLobby(rid, admin) {
 // --- 2. BOUCLE DE JEU (POLLING) ---
 
 function startPolling() {
-  //setInterval(() => {
-  if (!myRoomId) return;
+  setInterval(() => {
+    if (!myRoomId) return;
 
-  fetch(`Base/api.php?action=get&roomId=${myRoomId}`)
-    .then((r) => r.json())
-    .then((data) => {
-      if (!data || !data.players) return;
+    fetch(`Base/api.php?action=get&roomId=${myRoomId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data || !data.players) return;
 
-      // Mise à jour de mon index si nécessaire
-      if (myName) {
-        const me = data.players.find((p) => p.name === myName);
-        if (me) {
-          const newIndex = data.players.indexOf(me);
-          if (newIndex !== myIndex) {
-            myIndex = newIndex;
-            sessionStorage.setItem("belote_index", newIndex);
+        // Mise à jour de mon index si nécessaire
+        if (myName) {
+          const me = data.players.find((p) => p.name === myName);
+          if (me) {
+            const newIndex = data.players.indexOf(me);
+            if (newIndex !== myIndex) {
+              myIndex = newIndex;
+              sessionStorage.setItem("belote_index", newIndex);
+            }
           }
         }
-      }
 
-      // Gestion Admin
-      if (data.admin && myName) {
-        isAdmin = data.admin === myName;
-        document.getElementById("admin-controls").style.display = isAdmin ? "block" : "none";
-        document.getElementById("guest-controls").style.display = isAdmin ? "none" : "block";
-        const sl = document.getElementById("lobby-param-XXXX");
-        if (sl) sl.disabled = !isAdmin;
-      }
+        // Gestion Admin
+        if (data.admin && myName) {
+          isAdmin = data.admin === myName;
+          document.getElementById("admin-controls").style.display = isAdmin
+            ? "block"
+            : "none";
+          document.getElementById("guest-controls").style.display = isAdmin
+            ? "none"
+            : "block";
+          const sl = document.getElementById("lobby-param-XXXX");
+          if (sl) sl.disabled = !isAdmin;
+        }
 
-      // Dispatch selon l'état
-      if (data.status === "lobby") {
-        showScreen("screen-lobby");
-        document.getElementById("score-modal").style.display = "none";
-        updateLobbyUI(data);
-      } else {
-        updateGameUI(data);
-      }
-    })
-    .catch((e) => console.error("Polling error:", e));
-  //}, 1000);
+        // Dispatch selon l'état
+        if (data.status === "lobby") {
+          showScreen("screen-lobby");
+          document.getElementById("score-modal").style.display = "none";
+          updateLobbyUI(data);
+        } else {
+          console.log("DEBUG: Game data updateTime =", data);
+          if (lastUpdateTime != data.lastUpdate) {
+            lastUpdateTime = data.lastUpdate;
+            updateGameUI(data);
+          }
+        }
+      })
+      .catch((e) => console.error("Polling error:", e));
+  }, 500);
 }
 
 // --- 3. LOGIQUE DU LOBBY ---
@@ -147,7 +159,8 @@ function updateLobbyUI(d) {
   // Update des paramètres
 
   const scoreSel = document.getElementById("lobby-param-XXXX");
-  if (scoreSel && document.activeElement !== scoreSel && d.param) scoreSel.value = d.param;
+  if (scoreSel && document.activeElement !== scoreSel && d.param)
+    scoreSel.value = d.param;
 
   // Bouton Lancer (Admin seulement)
   if (isAdmin) {
@@ -244,10 +257,15 @@ function renderGame(data) {
   boardWrapper.className = "chess-board";
 
   let view = "white";
-  if (data.players[myIndex] && data.players[myIndex].color === "black") view = "black";
+  if (data.players[myIndex] && data.players[myIndex].color === "black")
+    view = "black";
 
-  const lettersArr = view === "white" ? letters.slice() : letters.slice().reverse();
-  const numbersArr = view === "white" ? numbers.slice(0, 8) : numbers.slice(0, 8).slice().reverse();
+  const lettersArr =
+    view === "white" ? letters.slice() : letters.slice().reverse();
+  const numbersArr =
+    view === "white"
+      ? numbers.slice(0, 8)
+      : numbers.slice(0, 8).slice().reverse();
 
   // Création des cases du plateau
   numbersArr.forEach((num, rowIndex) => {
@@ -380,7 +398,9 @@ function createCard(c) {
   const suitSym = suitSymbols[c.suit];
 
   let d = document.createElement("div");
-  d.className = `card ${isRed(c.suit) ? "red" : "black"} ${isFace ? "face-card" : ""}`;
+  d.className = `card ${isRed(c.suit) ? "red" : "black"} ${
+    isFace ? "face-card" : ""
+  }`;
   d.setAttribute("data-id", c.id);
 
   // Structure HTML réaliste : Coin Haut-Gauche + Centre + Coin Bas-Droit

@@ -280,7 +280,6 @@ switch ($action) {
             if ($json['status'] !== 'round_end')
                 return null;
 
-            $json['table'] = []; // On vide la table
             $json['status'] = 'playing'; // On reprend le jeu
             $json['roundStats'] = null;
 
@@ -333,7 +332,6 @@ switch ($action) {
             $json['status'] = 'lobby';
             foreach ($json['players'] as &$p)
                 $p['hand'] = [];
-            $json['table'] = [];
             $json['turnIndex'] = 0;
             echo json_encode(['success' => true]);
             return $json;
