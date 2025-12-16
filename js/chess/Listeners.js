@@ -77,69 +77,161 @@ function generateCandidate(originId, piece, xpos, ypos) {
   return false;
 }
 
+function canMoveTo(cellId, color) {
+  const cell = document.getElementById(cellId);
+
+  if (!cell) return { allowed: false, capture: false };
+
+  const piece = cell.data && cell.data["piece"];
+  const colorAtCell = cell.data && cell.data["color"];
+
+  if (!piece) return { allowed: true, capture: false };
+
+  if (color === colorAtCell) return { allowed: false, capture: false };
+
+  return { allowed: true, capture: true };
+}
+
+function computeLineMoves(xpos, ypos, dx, dy, pieceName, color, max = -1) {
+  let nextX = xpos.charCodeAt(0) + dx;
+  let nextY = ypos + dy;
+  const minX = "A".charCodeAt(0);
+  const maxX = "H".charCodeAt(0);
+  let steps = 0;
+  while (
+    nextX >= minX &&
+    nextX <= maxX &&
+    nextY >= 1 &&
+    nextY <= 8 &&
+    (max === -1 || steps < max)
+  ) {
+    const targetX = String.fromCharCode(nextX);
+    const targetCellId = `cell-${targetX}-${nextY}`;
+    const moveCheck = canMoveTo(targetCellId, color);
+    if (!moveCheck.allowed) break;
+    if (moveCheck.capture) {
+      generateCandidate(targetCellId, pieceName, xpos, ypos);
+      break;
+    }
+    generateCandidate(targetCellId, pieceName, xpos, ypos);
+    nextX += dx;
+    nextY += dy;
+    steps++;
+  }
+}
+
 function computePossibleMoves(pieceName, xpos, ypos, color) {
   const direction = color === "white" ? 1 : -1;
   switch (pieceName) {
     case "pawn":
-      if (ypos === 2) {
-        for (let i = 3; i <= 4; i++) {
-          generateCandidate(`cell-${xpos}-${i}`, pieceName, xpos, ypos);
-        }
-      } else if (ypos === 7) {
-        for (let i = 6; i >= 5; i--) {
-          generateCandidate(`cell-${xpos}-${i}`, pieceName, xpos, ypos);
-        }
-      } else {
-        if (ypos + direction >= 1 && ypos + direction <= 8) {
-          const nextCellId = `cell-${xpos}-${ypos + direction}`;
-          const next = document.getElementById(nextCellId);
-          if (next && next.children.length === 0) {
-            generateCandidate(
-              `cell-${xpos}-${ypos + direction}`,
-              pieceName,
-              xpos,
-              ypos
-            );
+      // forward one
+      const forwardY = ypos + direction;
+      if (forwardY >= 1 && forwardY <= 8) {
+        const forwardId = `cell-${xpos}-${forwardY}`;
+        const forwardCheck = canMoveTo(forwardId, color);
+        if (forwardCheck.allowed && !forwardCheck.capture) {
+          generateCandidate(forwardId, pieceName, xpos, ypos);
+
+          const startRank = color === "white" ? 2 : 7;
+          const doubleY = ypos + 2 * direction;
+          if (ypos === startRank && doubleY >= 1 && doubleY <= 8) {
+            const betweenId = `cell-${xpos}-${ypos + direction}`;
+            const doubleId = `cell-${xpos}-${doubleY}`;
+            const betweenCheck = canMoveTo(betweenId, color);
+            const doubleCheck = canMoveTo(doubleId, color);
+            if (
+              betweenCheck.allowed &&
+              !betweenCheck.capture &&
+              doubleCheck.allowed &&
+              !doubleCheck.capture
+            ) {
+              generateCandidate(doubleId, pieceName, xpos, ypos);
+            }
           }
         }
       }
-      // Calculate pawn captures
+
+      // captures
       const captureOffsets = [-1, 1];
       captureOffsets.forEach((offset) => {
-        const targetX = nextLetter(xpos, offset);
+        const targetX = String.fromCharCode(xpos.charCodeAt(0) + offset);
         const targetY = ypos + direction;
-        const targetCellId = `cell-${targetX}-${targetY}`;
-        console.log(`Checking capture at: ${targetCellId}`);
         if (targetX >= "A" && targetX <= "H" && targetY >= 1 && targetY <= 8) {
-          console.log(`Target cell for capture: ${targetCellId}`);
-          const targetCell = document.getElementById(targetCellId);
-          //if (targetCell && targetCell.children.length > 0) {
-          const targetPiece = targetCell.data["piece"];
-          if (targetPiece && !targetPiece.startsWith(color)) {
+          const targetCellId = `cell-${targetX}-${targetY}`;
+          const moveCheck = canMoveTo(targetCellId, color);
+          if (moveCheck.allowed && moveCheck.capture) {
             generateCandidate(targetCellId, pieceName, xpos, ypos);
           }
-          //}
         }
       });
 
       break;
 
     case "rook":
+      // use computeLineMoves to handle all four straight directions
+      computeLineMoves(xpos, ypos, 0, 1, pieceName, color); // UP
+      computeLineMoves(xpos, ypos, 0, -1, pieceName, color); // DOWN
+      computeLineMoves(xpos, ypos, 1, 0, pieceName, color); // RIGHT
+      computeLineMoves(xpos, ypos, -1, 0, pieceName, color); // LEFT
+
       break;
 
     case "knight":
+      const knightMoves = [
+        [1, 2],
+        [1, -2],
+        [-1, 2],
+        [-1, -2],
+        [2, 1],
+        [2, -1],
+        [-2, 1],
+        [-2, -1],
+      ];
+
+      knightMoves.forEach(([dx, dy]) => {
+        const targetX = String.fromCharCode(xpos.charCodeAt(0) + dx);
+        const targetY = ypos + dy;
+        if (targetX >= "A" && targetX <= "H" && targetY >= 1 && targetY <= 8) {
+          const targetCellId = `cell-${targetX}-${targetY}`;
+          const moveCheck = canMoveTo(targetCellId, color);
+          if (moveCheck.allowed) {
+            generateCandidate(targetCellId, pieceName, xpos, ypos);
+          }
+        }
+      });
+
       break;
 
     case "bishop":
-      break;
-
-    case "pawn":
+      computeLineMoves(xpos, ypos, 1, 1, pieceName, color); // UP-RIGHT
+      computeLineMoves(xpos, ypos, -1, 1, pieceName, color); // UP-LEFT
+      computeLineMoves(xpos, ypos, 1, -1, pieceName, color); // DOWN-RIGHT
+      computeLineMoves(xpos, ypos, -1, -1, pieceName, color); // DOWN-LEFT
       break;
 
     case "queen":
+      computeLineMoves(xpos, ypos, 0, 1, pieceName, color); // UP
+      computeLineMoves(xpos, ypos, 0, -1, pieceName, color); // DOWN
+      computeLineMoves(xpos, ypos, 1, 0, pieceName, color); // RIGHT
+      computeLineMoves(xpos, ypos, -1, 0, pieceName, color); // LEFT
+
+      computeLineMoves(xpos, ypos, 1, 1, pieceName, color); // UP-RIGHT
+      computeLineMoves(xpos, ypos, -1, 1, pieceName, color); // UP-LEFT
+      computeLineMoves(xpos, ypos, 1, -1, pieceName, color); // DOWN-RIGHT
+      computeLineMoves(xpos, ypos, -1, -1, pieceName, color); // DOWN-LEFT
       break;
 
     case "king":
+      computeLineMoves(xpos, ypos, 0, 1, pieceName, color, 1); // UP
+      computeLineMoves(xpos, ypos, 0, -1, pieceName, color, 1); // DOWN
+      computeLineMoves(xpos, ypos, 1, 0, pieceName, color, 1); // RIGHT
+      computeLineMoves(xpos, ypos, -1, 0, pieceName, color, 1); // LEFT
+
+      computeLineMoves(xpos, ypos, 1, 1, pieceName, color, 1); // UP-RIGHT
+      computeLineMoves(xpos, ypos, -1, 1, pieceName, color, 1); // UP-LEFT
+      computeLineMoves(xpos, ypos, 1, -1, pieceName, color, 1); // DOWN-RIGHT
+      computeLineMoves(xpos, ypos, -1, -1, pieceName, color, 1); // DOWN-LEFT
+
       break;
     default:
       // tg, il y a un bug
