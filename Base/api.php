@@ -67,24 +67,6 @@ function generatePieces()
     $i = 0;
     // Populate white pieces (rank 1) and white pawns (rank 2)
     foreach ($letters as $letter) {
-        /* $board['white'][] = [
-            'type' => $pieceOrder[$i],
-            'color' => 'white',
-            'position' => $letter . '-1'
-        ];
-        $board['white'][] = [
-            'type' => 'pawn',
-            'color' => 'white',
-            'position' => $letter . '-2'
-        ]; */
-        /*
-         * white : {
-         *  "pawn" : [
-         *      { "position": "A-2" },
-         *     { "position": "B-2" },
-         *    ...  ]...
-         * }
-         */
         $board['white']->{$pieceOrder[$i]}[] = [
             'position' => $letter . '-1'
         ];
@@ -137,8 +119,6 @@ switch ($action) {
             'admin' => $name,
             'status' => 'lobby',
             'players' => [['name' => $name, 'color' => "", 'pieces' => (object) []]],
-            'table' => [],
-            'pieces' => generatePieces(),
             'turnIndex' => 0,
             'lastUpdate' => time()
         ];
@@ -192,9 +172,8 @@ switch ($action) {
                 echo json_encode(['error' => 'Pas assez de joueurs']);
                 return null;
             }
-
+            $pieces = generatePieces();
             $firstPlayerIndex = rand(0, count($json['players']) - 1);
-            $json['table'] = [];
             $json['status'] = 'playing';
             $json['turnIndex'] = $firstPlayerIndex;
 
@@ -205,13 +184,13 @@ switch ($action) {
                     /* $p['pieces'] = array_filter($json['pieces']['white'], function ($piece) {
                         return $piece['color'] === 'white';
                     }); */
-                    $p['pieces'] = $json['pieces']['white'];
+                    $p['pieces'] = $pieces['white'];
                     $p['color'] = 'white';
                 } else {
                     /* $p['pieces'] = array_filter($json['pieces']['black'], function ($piece) {
                         return $piece['color'] === 'black';
                     }); */
-                    $p['pieces'] = $json['pieces']['black'];
+                    $p['pieces'] = $pieces['black'];
                     $p['color'] = 'black';
                 }
                 $i++;
@@ -225,58 +204,6 @@ switch ($action) {
 
     // 4. JOUER UNE CARTE
     case 'play':
-        /* $roomId = $_REQUEST['roomId'];
-        $cardId = $_REQUEST['cardId'];
-        $idx = (int) $_REQUEST['index'];
-
-        processRoom($roomId, function ($json) use ($cardId, $idx) {
-            // 1. VERIFICATION DU TOUR (Activée)
-            if ($json['turnIndex'] !== $idx) {
-                echo json_encode(['error' => 'Ce n\'est pas votre tour !']);
-                return null;
-            }
-
-            $hand = &$json['players'][$idx]['hand'];
-            $cardIndex = -1;
-            $cardPlayed = null;
-
-            foreach ($hand as $k => $c) {
-                if ($c['id'] === $cardId) {
-                    $cardPlayed = $c;
-                    $cardIndex = $k;
-                    break;
-                }
-            }
-
-            if (!$cardPlayed) {
-                echo json_encode(['error' => 'Carte introuvable']);
-                return null;
-            }
-
-            // Action de jeu
-            array_splice($hand, $cardIndex, 1);
-            $json['table'][] = ['playerIndex' => $idx, 'card' => $cardPlayed];
-
-            // 2. GESTION FIN DE PLI
-            if (count($json['table']) >= count($json['players'])) {
-                // Tout le monde a joué : on passe en mode "fin de round"
-                $json['status'] = 'round_end';
-
-                // Génération de stats random comme demandé
-                $json['roundStats'] = [
-                    'winner' => $json['players'][array_rand($json['players'])]['name'], // Vainqueur au hasard
-                    'points' => rand(5, 50),
-                    'message' => ['bite !', 'couille !', 'sex !'][rand(0, 2)]
-                ];
-            } else {
-                // On passe au joueur suivant
-                $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
-            }
-
-            echo json_encode(['success' => true, 'gameState' => $json]);
-            return $json;
-        });
-        break; */
         $roomId = $_REQUEST['roomId'];
 
         $pieceName = $_REQUEST['pieceName'];
@@ -320,8 +247,23 @@ switch ($action) {
                 return null;
             }
 
-            // Action de jeu
-            $json['table'][] = ['playerIndex' => $index, 'piece' => $pieceName, 'from' => $origin, 'to' => $destination];
+            // on verifie si une pièce adverse est capturée
+            foreach ($json['players'] as $pIndex => &$p) {
+                if ($pIndex !== $index) {
+                    $opponentPieces = &$p['pieces'];
+                    foreach ($opponentPieces as $type => &$pieceArray) {
+                        foreach ($pieceArray as $k => $piece) {
+                            if ($piece['position'] === $destination) {
+                                // Capturer la pièce
+                                unset($opponentPieces[$type][$k]);
+                                // Réindexer le tableau pour éviter les trous
+                                $opponentPieces[$type] = array_values($opponentPieces[$type]);
+                                break 2; // Sortir des deux boucles
+                            }
+                        }
+                    }
+                }
+            }
 
             // On passe au joueur suivant
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);

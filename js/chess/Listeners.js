@@ -1,5 +1,4 @@
 /* Cell listener for chess board interactions */
-
 function addCellClickListener(cellElement, color) {
   cellElement.addEventListener("click", () => {
     if (cellElement.children.length > 0) {
@@ -79,6 +78,7 @@ function generateCandidate(originId, piece, xpos, ypos) {
 }
 
 function computePossibleMoves(pieceName, xpos, ypos, color) {
+  const direction = color === "white" ? 1 : -1;
   switch (pieceName) {
     case "pawn":
       if (ypos === 2) {
@@ -90,9 +90,38 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
           generateCandidate(`cell-${xpos}-${i}`, pieceName, xpos, ypos);
         }
       } else {
-        const direction = color === "white" ? 1 : -1;
-        generateCandidate(`cell-${xpos}-${ypos + direction}`, pieceName, xpos, ypos);
+        if (ypos + direction >= 1 && ypos + direction <= 8) {
+          const nextCellId = `cell-${xpos}-${ypos + direction}`;
+          const next = document.getElementById(nextCellId);
+          if (next && next.children.length === 0) {
+            generateCandidate(
+              `cell-${xpos}-${ypos + direction}`,
+              pieceName,
+              xpos,
+              ypos
+            );
+          }
+        }
       }
+      // Calculate pawn captures
+      const captureOffsets = [-1, 1];
+      captureOffsets.forEach((offset) => {
+        const targetX = nextLetter(xpos, offset);
+        const targetY = ypos + direction;
+        const targetCellId = `cell-${targetX}-${targetY}`;
+        console.log(`Checking capture at: ${targetCellId}`);
+        if (targetX >= "A" && targetX <= "H" && targetY >= 1 && targetY <= 8) {
+          console.log(`Target cell for capture: ${targetCellId}`);
+          const targetCell = document.getElementById(targetCellId);
+          //if (targetCell && targetCell.children.length > 0) {
+          const targetPiece = targetCell.data["piece"];
+          if (targetPiece && !targetPiece.startsWith(color)) {
+            generateCandidate(targetCellId, pieceName, xpos, ypos);
+          }
+          //}
+        }
+      });
+
       break;
 
     case "rook":
@@ -117,4 +146,8 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       console.error(`Unknown piece type: ${data.piece.type}`);
       break;
   }
+}
+
+function nextLetter(letter, offset) {
+  return String.fromCharCode(letter.charCodeAt(0) + offset);
 }
