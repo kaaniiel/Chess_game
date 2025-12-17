@@ -68,10 +68,12 @@ function generatePieces()
     // Populate white pieces (rank 1) and white pawns (rank 2)
     foreach ($letters as $letter) {
         $board['white']->{$pieceOrder[$i]}[] = [
-            'position' => $letter . '-1'
+            'position' => $letter . '-1',
+            'nbMoves' => 0
         ];
         $board['white']->{"pawn"}[] = [
-            'position' => $letter . '-2'
+            'position' => $letter . '-2',
+            'nbMoves' => 0
         ];
         $i++;
     }
@@ -90,10 +92,12 @@ function generatePieces()
             'position' => $letter . '-7'
         ]; */
         $board['black']->{$pieceOrder[$i]}[] = [
-            'position' => $letter . '-8'
+            'position' => $letter . '-8',
+            'nbMoves' => 0
         ];
         $board['black']->{"pawn"}[] = [
-            'position' => $letter . '-7'
+            'position' => $letter . '-7',
+            'nbMoves' => 0
         ];
         $i++;
     }
@@ -236,6 +240,7 @@ switch ($action) {
                     if ($piece['position'] === $origin) {
                         // Déplacer la pièce
                         $pieces[$type][$k]['position'] = $destination;
+                        $pieces[$type][$k]['nbMoves'] += 1;
                         $pieceFound = true;
                         break 2; // Sortir des deux boucles
                     }
