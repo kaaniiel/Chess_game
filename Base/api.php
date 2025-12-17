@@ -69,11 +69,13 @@ function generatePieces()
     foreach ($letters as $letter) {
         $board['white']->{$pieceOrder[$i]}[] = [
             'position' => $letter . '-1',
-            'nbMoves' => 0
+            'nbMoves' => 0,
+            'lastRoundPlay' => -1
         ];
         $board['white']->{"pawn"}[] = [
             'position' => $letter . '-2',
-            'nbMoves' => 0
+            'nbMoves' => 0,
+            'lastRoundPlay' => -1
         ];
         $i++;
     }
@@ -81,23 +83,15 @@ function generatePieces()
     // Populate black pieces (rank 8) and black pawns (rank 7)
     $i = 0;
     foreach ($letters as $letter) {
-        /* $board['black'][] = [
-            'type' => $pieceOrder[$i],
-            'color' => 'black',
-            'position' => $letter . '-8'
-        ];
-        $board['black'][] = [
-            'type' => 'pawn',
-            'color' => 'black',
-            'position' => $letter . '-7'
-        ]; */
         $board['black']->{$pieceOrder[$i]}[] = [
             'position' => $letter . '-8',
-            'nbMoves' => 0
+            'nbMoves' => 0,
+            'lastRoundPlay' => -1
         ];
         $board['black']->{"pawn"}[] = [
             'position' => $letter . '-7',
-            'nbMoves' => 0
+            'nbMoves' => 0,
+            'lastRoundPlay' => -1
         ];
         $i++;
     }
@@ -124,6 +118,7 @@ switch ($action) {
             'status' => 'lobby',
             'players' => [['name' => $name, 'color' => "", 'pieces' => (object) []]],
             'turnIndex' => 0,
+            'round' => 0,
             'lastUpdate' => time()
         ];
 
@@ -200,6 +195,8 @@ switch ($action) {
                 $i++;
             }
 
+            $json['round'] = 1;
+
 
             echo json_encode(['success' => true]);
             return $json;
@@ -209,8 +206,6 @@ switch ($action) {
     // 4. JOUER UNE CARTE
     case 'play':
         $roomId = $_REQUEST['roomId'];
-
-        $pieceName = $_REQUEST['pieceName'];
 
         $originFullId = $_REQUEST['origin'];
         $origin = substr($originFullId, 5); // Enlève le préfixe "cell-"
@@ -222,26 +217,27 @@ switch ($action) {
 
         $index = (int) $_REQUEST['index'];
 
-        processRoom($roomId, function ($json) use ($playerName, $index, $origin, $destination, $pieceName) {
+        processRoom($roomId, function ($json) use ($index, $origin, $destination) {
             // 1. VERIFICATION DU TOUR (Activée)
             if ($json['turnIndex'] !== $index) {
                 echo json_encode(['error' => 'Ce n\'est pas votre tour !']);
                 return null;
             }
-
             $player = &$json['players'][$index];
             $pieces = &$player['pieces'];
 
-            $pieceFound = false;
+            $pieceName = "";
+            $pieceFound = null;
 
             // Recherche de la pièce à déplacer
             foreach ($pieces as $type => &$pieceArray) {
                 foreach ($pieceArray as $k => $piece) {
                     if ($piece['position'] === $origin) {
-                        // Déplacer la pièce
+                        $pieceFound = $piece;
                         $pieces[$type][$k]['position'] = $destination;
                         $pieces[$type][$k]['nbMoves'] += 1;
-                        $pieceFound = true;
+                        $pieces[$type][$k]['lastRoundPlay'] = $json['round'];
+                        $pieceName = $type;
                         break 2; // Sortir des deux boucles
                     }
                 }
@@ -252,6 +248,26 @@ switch ($action) {
                 return null;
             }
 
+            // En passant
+            if ($pieceName === 'pawn') {
+                $destinationPawn = str_split($destination);
+                $behindPawnPos = $destinationPawn[0] . "-" . ($destinationPawn[2] + ($player['color'] === 'white' ? -1 : 1));
+
+                foreach ($json['players'] as $pIndex => &$p) {
+                    if ($pIndex !== $index) {
+                        $opponentPieces = &$p['pieces'];
+                        foreach ($opponentPieces['pawn'] as $k => $piece) {
+                            if ($piece['position'] === $behindPawnPos && $piece['lastRoundPlay'] === $json['round'] - 1) {
+                                // Capturer la pièce
+                                unset($opponentPieces['pawn'][$k]);
+                                // Réindexer le tableau pour éviter les trous
+                                $opponentPieces['pawn'] = array_values($opponentPieces['pawn']);
+                                break 2; // Sortir des deux boucles
+                            }
+                        }
+                    }
+                }
+            }
             // on verifie si une pièce adverse est capturée
             foreach ($json['players'] as $pIndex => &$p) {
                 if ($pIndex !== $index) {
@@ -272,11 +288,10 @@ switch ($action) {
 
             // On passe au joueur suivant
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
-
+            $json['round'] += 1;
             echo json_encode(['success' => true, 'gameState' => $json]);
             return $json;
         });
-        echo json_encode(['error' => 'Action non implémentée']);
         break;
     // 5. CONTINUER (Pli suivant)
     case 'nextTrick':

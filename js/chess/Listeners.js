@@ -29,6 +29,7 @@ function addCellClickListener(cellElement, color) {
     }
 
     console.log(`Cell clicked: (${cellElement.id})`);
+    console.log(`Piece data:`, cellElement.data);
     const pieceName = cellElement.data["piece"];
     const xpos = cellElement.data["xpos"]; // letter
     const ypos = cellElement.data["ypos"]; // number
@@ -161,6 +162,30 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
           const moveCheck = canMoveTo(targetCellId, color);
           if (moveCheck.allowed && moveCheck.capture) {
             generateCandidate(targetCellId, pieceName, xpos, ypos);
+          }
+        }
+      });
+
+      // EN PASSANT
+      captureOffsets.forEach((offset) => {
+        const adjacentX = nextLetter(xpos, offset);
+        const adjacentCellId = `cell-${adjacentX}-${ypos}`;
+        const adjacentCell = document.getElementById(adjacentCellId);
+        if (adjacentCell && adjacentCell.data) {
+          const adjacentPiece = adjacentCell.data["piece"];
+          const adjacentColor = adjacentCell.data["color"];
+          const adjacentLastRound = adjacentCell.data["lastRoundPlay"];
+          const currentRound = adjacentCell.data["round"];
+          if (
+            adjacentPiece === "pawn" &&
+            adjacentColor !== color &&
+            adjacentLastRound === currentRound - 1 &&
+            canMoveTo(adjacentCellId, color).allowed
+          ) {
+            console.log("En Passant possible on", adjacentCellId);
+            const enPassantY = ypos + direction;
+            const enPassantId = `cell-${adjacentX}-${enPassantY}`;
+            generateCandidate(enPassantId, pieceName, xpos, ypos);
           }
         }
       });
