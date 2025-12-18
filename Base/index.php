@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../css/base.css?v=<?= filemtime('../css/base.css') ?>">
     <link rel="stylesheet" href="../css/games.css?v=<?= filemtime('../css/games.css') ?>">
     <link rel="stylesheet" href="../css/cartes.css?v=<?= filemtime('../css/cartes.css') ?>">
+    <link rel="stylesheet" href="../css/chess.css?v=<?= filemtime('../css/chess.css') ?>">
     <script src="../js/room.js?v=<?= filemtime('../js/room.js') ?>" defer></script>
     <meta name="title" content="Jeu d'échec" />
     <meta name="description"
