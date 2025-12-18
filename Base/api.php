@@ -268,6 +268,19 @@ switch ($action) {
                     }
                 }
             }
+            // Castling
+            if ($pieceName === 'king' && $pieces['king'][0]['nbMoves'] === 1) {
+                $rookOrigin = ($destination[0] === 'G' ? 'H' : 'A') . '-' . $origin[2];
+                $rookDestination = ($destination[0] === 'G' ? 'F' : 'C') . '-' . $origin[2];
+
+                foreach ($pieces['rook'] as $k => $rook) {
+                    if ($rook['position'] === $rookOrigin) {
+                        $pieces['rook'][$k]['position'] = $rookDestination;
+                        $pieces['rook'][$k]['nbMoves'] += 1;
+                        break;
+                    }
+                }
+            }
             // on verifie si une pièce adverse est capturée
             foreach ($json['players'] as $pIndex => &$p) {
                 if ($pIndex !== $index) {
