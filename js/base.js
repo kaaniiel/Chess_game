@@ -12,7 +12,9 @@ window.onload = function () {
 
 // afficher l'un des ecrans (lobby, game, etc.)
 function showScreen(id) {
-  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  document
+    .querySelectorAll(".screen")
+    .forEach((s) => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
@@ -29,7 +31,9 @@ function enterLobby(rid, admin) {
   // Handlers des paramètres (Admin seulement)
   const scoreSel = document.getElementById("lobby-param-XXXX");
   scoreSel.onchange = function () {
-    fetch(`Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`);
+    fetch(
+      `Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`
+    );
   };
 
   startPolling();
@@ -61,8 +65,12 @@ function startPolling() {
         // Gestion Admin
         if (data.admin && myName) {
           isAdmin = data.admin === myName;
-          document.getElementById("admin-controls").style.display = isAdmin ? "block" : "none";
-          document.getElementById("guest-controls").style.display = isAdmin ? "none" : "block";
+          document.getElementById("admin-controls").style.display = isAdmin
+            ? "block"
+            : "none";
+          document.getElementById("guest-controls").style.display = isAdmin
+            ? "none"
+            : "block";
           const sl = document.getElementById("lobby-param-XXXX");
           if (sl) sl.disabled = !isAdmin;
         }
@@ -150,7 +158,8 @@ function updateLobbyUI(d) {
   // Update des paramètres
 
   const scoreSel = document.getElementById("lobby-param-XXXX");
-  if (scoreSel && document.activeElement !== scoreSel && d.param) scoreSel.value = d.param;
+  if (scoreSel && document.activeElement !== scoreSel && d.param)
+    scoreSel.value = d.param;
 
   // Bouton Lancer (Admin seulement)
   if (isAdmin) {
@@ -247,10 +256,15 @@ function renderGame(data) {
   boardWrapper.className = "chess-board";
 
   let view = "white";
-  if (data.players[myIndex] && data.players[myIndex].color === "black") view = "black";
+  if (data.players[myIndex] && data.players[myIndex].color === "black")
+    view = "black";
 
-  const lettersArr = view === "white" ? letters.slice() : letters.slice().reverse();
-  const numbersArr = view === "white" ? numbers.slice(0, 8) : numbers.slice(0, 8).slice().reverse();
+  // const lettersArr = view === "white" ? letters.slice() : letters.slice().reverse();
+  const lettersArr = letters.slice();
+  const numbersArr =
+    view === "white"
+      ? numbers.slice(0, 8)
+      : numbers.slice(0, 8).slice().reverse();
 
   // Création des cases du plateau
   numbersArr.forEach((num, rowIndex) => {
@@ -393,7 +407,9 @@ function createCard(c) {
   const suitSym = suitSymbols[c.suit];
 
   let d = document.createElement("div");
-  d.className = `card ${isRed(c.suit) ? "red" : "black"} ${isFace ? "face-card" : ""}`;
+  d.className = `card ${isRed(c.suit) ? "red" : "black"} ${
+    isFace ? "face-card" : ""
+  }`;
   d.setAttribute("data-id", c.id);
 
   // Structure HTML réaliste : Coin Haut-Gauche + Centre + Coin Bas-Droit

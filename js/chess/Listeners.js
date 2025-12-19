@@ -123,6 +123,8 @@ function computeLineMoves(xpos, ypos, dx, dy, pieceName, color, max = -1) {
 
 function computePossibleMoves(pieceName, xpos, ypos, color) {
   const direction = color === "white" ? 1 : -1;
+  const tmp = checkKingInCheck(color);
+  console.log("Is king in check?", tmp);
   switch (pieceName) {
     case "pawn":
       // forward one
@@ -264,7 +266,11 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       if (king["nbMoves"] == 0) {
         const offset = [-1, 1];
         offset.forEach((dir) => {
-          for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
+          for (
+            let x = nextLetter(xpos, dir);
+            x <= "H" || x >= "A";
+            x = nextLetter(x, dir)
+          ) {
             const cellId = `cell-${x}-${ypos}`;
             const cell = document.getElementById(cellId);
 
@@ -295,8 +301,201 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       console.error(`Unknown piece type: ${data.piece.type}`);
       break;
   }
+
+  // Après génération des candidats, filtrer les coups qui laissent le roi en échec.
+  // On simule chaque coup sur le DOM (déplacer les données), appelle checkKingInCheck,
+  // puis on restaure l'état. Les overlays qui laissent le roi en échec sont supprimés.
+  const overlays = Array.from(document.getElementsByClassName("canBeSelected"));
+  overlays.forEach((overlay) => {
+    try {
+      const targetCell = overlay.parentElement;
+      const originX = overlay.data["xpos"];
+      const originY = overlay.data["ypos"];
+      const originCell = document.getElementById(`cell-${originX}-${originY}`);
+
+      if (!originCell || !originCell.data) {
+        overlay.remove();
+        return;
+      }
+
+      // backup
+      const originData = originCell.data ? { ...originCell.data } : null;
+      const targetData = targetCell.data ? { ...targetCell.data } : null;
+
+      // parse target coords
+      const parts = targetCell.id.split("-");
+      const targetX = parts[1];
+      const targetY = parseInt(parts[2], 10);
+
+      // simulate move
+      targetCell.data = { ...originData };
+      targetCell.data["xpos"] = targetX;
+      targetCell.data["ypos"] = targetY;
+      delete originCell.data;
+
+      // basic EN PASSANT handling: pawn moves diagonally into empty square
+      let capturedBackup = null;
+      if (originData.piece === "pawn" && originX !== targetX && !targetData) {
+        const capturedCell = document.getElementById(
+          `cell-${targetX}-${originY}`
+        );
+        if (
+          capturedCell &&
+          capturedCell.data &&
+          capturedCell.data.piece === "pawn"
+        ) {
+          capturedBackup = { ...capturedCell.data };
+          delete capturedCell.data;
+        }
+      }
+
+      const stillInCheck = checkKingInCheck(color);
+
+      // restore
+      if (originData) originCell.data = originData;
+      else delete originCell.data;
+      if (targetData) targetCell.data = targetData;
+      else delete targetCell.data;
+      if (capturedBackup) {
+        const capturedCell = document.getElementById(
+          `cell-${targetX}-${originY}`
+        );
+        if (capturedCell) capturedCell.data = capturedBackup;
+      }
+
+      if (stillInCheck) overlay.remove();
+    } catch (e) {
+      console.error("Error filtering candidate overlay:", e);
+      try {
+        overlay.remove();
+      } catch (err) {}
+    }
+  });
 }
 
 function nextLetter(letter, offset) {
   return String.fromCharCode(letter.charCodeAt(0) + offset);
+}
+
+function checkKingInCheck(color) {
+  // Return true if the king of `color` is currently attacked by any opponent piece.
+  const opponent = color === "white" ? "black" : "white";
+
+  // Find king position (constant 8x8 scan)
+  let kingX = null;
+  let kingY = null;
+  outer: for (let xi = "A".charCodeAt(0); xi <= "H".charCodeAt(0); xi++) {
+    for (let y = 1; y <= 8; y++) {
+      const cell = document.getElementById(
+        `cell-${String.fromCharCode(xi)}-${y}`
+      );
+      if (
+        cell &&
+        cell.data &&
+        cell.data.piece === "king" &&
+        cell.data.color === color
+      ) {
+        kingX = String.fromCharCode(xi);
+        kingY = y;
+        break outer;
+      }
+    }
+  }
+  if (!kingX) return false; // king not found -> not in check
+
+  // Helper to safely read a cell
+  function getCell(xChar, y) {
+    if (xChar < "A" || xChar > "H" || y < 1 || y > 8) return null;
+    return document.getElementById(`cell-${xChar}-${y}`) || null;
+  }
+
+  // 1) Pawn attacks (opponent pawns that capture onto king)
+  const oppDir = opponent === "white" ? 1 : -1;
+  const pawnCols = [-1, 1];
+  for (const dc of pawnCols) {
+    const px = String.fromCharCode(kingX.charCodeAt(0) + dc);
+    const py = kingY - oppDir;
+    const c = getCell(px, py);
+    if (c && c.data && c.data.piece === "pawn" && c.data.color === opponent)
+      return true;
+  }
+
+  // 2) Knight attacks
+  const knightOffsets = [
+    [1, 2],
+    [1, -2],
+    [-1, 2],
+    [-1, -2],
+    [2, 1],
+    [2, -1],
+    [-2, 1],
+    [-2, -1],
+  ];
+  for (const [dx, dy] of knightOffsets) {
+    const nx = String.fromCharCode(kingX.charCodeAt(0) + dx);
+    const ny = kingY + dy;
+    const c = getCell(nx, ny);
+    if (c && c.data && c.data.piece === "knight" && c.data.color === opponent)
+      return true;
+  }
+
+  // 3) Adjacent enemy king
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = String.fromCharCode(kingX.charCodeAt(0) + dx);
+      const ny = kingY + dy;
+      const c = getCell(nx, ny);
+      if (c && c.data && c.data.piece === "king" && c.data.color === opponent)
+        return true;
+    }
+  }
+
+  // 4) Sliding pieces: rook/queen (orthogonal) and bishop/queen (diagonal)
+  const directions = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [-1, 1],
+    [1, -1],
+    [-1, -1],
+  ];
+
+  for (const [dx, dy] of directions) {
+    let step = 1;
+    while (true) {
+      const nx = String.fromCharCode(kingX.charCodeAt(0) + dx * step);
+      const ny = kingY + dy * step;
+      const c = getCell(nx, ny);
+      if (!c) break; // outside board
+      if (c.data && c.data.piece) {
+        if (c.data.color === opponent) {
+          const p = c.data.piece;
+          const isOrthogonal = dx === 0 || dy === 0;
+          const isDiagonal = Math.abs(dx) === Math.abs(dy);
+          if (
+            (isOrthogonal && (p === "rook" || p === "queen")) ||
+            (isDiagonal && (p === "bishop" || p === "queen"))
+          ) {
+            return true;
+          }
+        }
+        break; // blocked by any piece (friend or foe)
+      }
+      step++;
+    }
+  }
+
+  return false; // no attackers found
+}
+
+function clearAllOverlays() {
+  const overlays = Array.from(document.getElementsByClassName("canBeSelected"));
+  overlays.forEach((o) => {
+    try {
+      o.remove();
+    } catch (e) {}
+  });
 }
