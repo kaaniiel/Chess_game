@@ -499,3 +499,47 @@ function clearAllOverlays() {
     } catch (e) {}
   });
 }
+
+function isCheckmate(color) {
+  // Checkmate: king is in check and the side has no legal moves.
+  if (!checkKingInCheck(color)) return false;
+
+  // Helper to fetch a cell element
+  function getCell(xChar, y) {
+    if (xChar < "A" || xChar > "H" || y < 1 || y > 8) return null;
+    return document.getElementById(`cell-${xChar}-${y}`) || null;
+  }
+
+  // For each piece of `color`, generate possible moves (they are already filtered
+  // by computePossibleMoves to only include moves that don't leave the king in check).
+  for (let xi = "A".charCodeAt(0); xi <= "H".charCodeAt(0); xi++) {
+    for (let y = 1; y <= 8; y++) {
+      const xChar = String.fromCharCode(xi);
+      const cell = getCell(xChar, y);
+      if (!cell || !cell.data) continue;
+      if (cell.data.color !== color) continue;
+
+      // Clear any existing overlays before generating
+      clearAllOverlays();
+
+      // Generate moves for this piece
+      computePossibleMoves(
+        cell.data.piece,
+        cell.data.xpos,
+        cell.data.ypos,
+        color
+      );
+
+      // If any overlay was created for this origin, then there is at least one legal move
+      const originOverlays = cell.getElementsByClassName("canBeSelected");
+      if (originOverlays && originOverlays.length > 0) {
+        clearAllOverlays();
+        return false; // not checkmate: at least one legal move
+      }
+    }
+  }
+
+  // No legal moves found
+  clearAllOverlays();
+  return true;
+}
