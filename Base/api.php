@@ -98,6 +98,7 @@ function generatePieces()
 
     return $board;
 }
+
 // --- ROUTER ---
 
 $action = $_REQUEST['action'] ?? '';
@@ -119,7 +120,8 @@ switch ($action) {
             'players' => [['name' => $name, 'color' => "", 'pieces' => (object) []]],
             'turnIndex' => 0,
             'round' => 0,
-            'lastUpdate' => time()
+            'lastUpdate' => time(),
+            'roundStats' => []
         ];
 
         file_put_contents($dataDir . 'room_' . $roomId . '.json', json_encode($gameState));
@@ -378,6 +380,20 @@ switch ($action) {
             echo file_get_contents($f);
         break;
 
+    case 'declareCheckmate':
+        $roomId = $_REQUEST['roomId'];
+        $index = (int) $_REQUEST['index'];
+        processRoom($roomId, function ($json) use ($index) {
+            $json['status'] = 'round_end';
+            $json['lastUpdate'] = time();
+            $json['roundStats'] = [
+                'winnerIndex' => $index,
+                'reason' => 'checkmate'
+            ];
+            echo json_encode(['success' => true, 'gameState' => $json]);
+            return $json;
+        });
+        break;
     default:
         echo json_encode(['error' => 'Action inconnue']);
         break;

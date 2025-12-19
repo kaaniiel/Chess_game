@@ -117,3 +117,7 @@
   margin: auto;
   position: absolute;
 }
+
+#game-announcer {
+  top : -54px
+}

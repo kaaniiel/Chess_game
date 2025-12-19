@@ -11,7 +11,6 @@
     <title>Jeu d'échec</title>
     <link rel="stylesheet" href="../css/base.css?v=<?= filemtime('../css/base.css') ?>">
     <link rel="stylesheet" href="../css/games.css?v=<?= filemtime('../css/games.css') ?>">
-    <link rel="stylesheet" href="../css/cartes.css?v=<?= filemtime('../css/cartes.css') ?>">
     <link rel="stylesheet" href="../css/chess.css?v=<?= filemtime('../css/chess.css') ?>">
     <script src="../js/room.js?v=<?= filemtime('../js/room.js') ?>" defer></script>
     <meta name="title" content="Jeu d'échec" />
@@ -113,13 +112,13 @@
     </div>
 
     <div id="screen-game" class="screen">
+        <div id="game-announcer" class="game-announcer">Chargement...</div>
         <button class="btn-red" style="padding: 8px 12px; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"
             onclick="backToLobby()">
             <i class="fas fa-arrow-left"></i> Salon
         </button>
 
         <div id="game-container">
-            <div id="game-announcer" class="game-announcer">Chargement...</div>
 
             <!-- <div class="table-center">
                 <div id="slot-top" class="card-slot slot-top"></div>
