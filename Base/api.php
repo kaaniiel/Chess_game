@@ -385,7 +385,7 @@ switch ($action) {
         $index = (int) $_REQUEST['index'];
         processRoom($roomId, function ($json) use ($index) {
             $json['status'] = 'round_end';
-            $json['lastUpdate'] = time();
+            $json['lastUpdate'] = -1;
             $json['roundStats'] = [
                 'winnerIndex' => $index,
                 'reason' => 'checkmate'

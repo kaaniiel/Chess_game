@@ -1,4 +1,3 @@
-
 /* Ensure cells center their children */
 .chess-cell {
   width: 70px;
@@ -119,5 +118,14 @@
 }
 
 #game-announcer {
-  top : -54px
+  top: -54px;
+}
+
+.isCheck {
+  /* Red gradient toward center in back */
+  background: radial-gradient(
+    circle,
+    rgba(255, 0, 0, 0.4) 70%,
+    rgba(255, 0, 0, 0) 100%
+  );
 }
