@@ -394,8 +394,42 @@ switch ($action) {
             return $json;
         });
         break;
+
+    case 'promote':
+        $roomId = $_REQUEST['roomId'];
+        $index = (int) $_REQUEST['index'];
+        processRoom($roomId, function ($json) use ($index) {
+            $player = &$json['players'][$index];
+            $pieces = &$player['pieces'];
+
+            $promotionPos = $_REQUEST['position'];
+            $newPieceType = $_REQUEST['newType'];
+
+            // Trouver et promouvoir le pion
+            foreach ($pieces['pawn'] as $k => $piece) {
+                if ($piece['position'] === $promotionPos) {
+                    $nbMovesPawn = $piece['nbMoves'];
+                    // Supprimer le pion
+                    unset($pieces['pawn'][$k]);
+                    // Ajouter la nouvelle pièce
+                    $pieces[$newPieceType][] = [
+                        'position' => $promotionPos,
+                        'nbMoves' => $nbMovesPawn,
+                        'lastRoundPlay' => $json['round']
+                    ];
+                    // Réindexer le tableau des pions
+                    $pieces['pawn'] = array_values($pieces['pawn']);
+                    break;
+                }
+            }
+
+            echo json_encode(['success' => true, 'gameState' => $json]);
+            return $json;
+        });
+        break;
     default:
         echo json_encode(['error' => 'Action inconnue']);
         break;
+
 }
 ?>
