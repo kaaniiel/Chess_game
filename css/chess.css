@@ -117,8 +117,28 @@
   position: absolute;
 }
 
-#game-announcer {
-  top: -54px;
+/* Top bar: abandon button + announcer side by side */
+#game-top-bar {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 50;
+}
+
+#game-top-bar #game-announcer {
+  position: static;
+  transform: none;
+}
+
+#game-top-bar #btn-abandon {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
 }
 
 .isCheck {
@@ -163,4 +183,8 @@
   font-size: 1.5em;
   text-align: center;
   border-bottom: 1px solid #2c3e50;
+}
+
+#btn-abandon {
+  display: inline-block;
 }
