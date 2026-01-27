@@ -98,7 +98,6 @@ function refreshRoomList() {
   fetch("Base/api.php?action=listRooms")
     .then((r) => {
       let tmp = r.json();
-      console.log(tmp);
       return tmp;
     })
     .then((data) => {
@@ -125,7 +124,7 @@ function refreshRoomList() {
                         <button class="btn-blue" onclick="joinGame('${room.id}')">Rejoindre</button>
                     </div>
                 </div>
-            `
+            `,
         )
         .join("");
     });
@@ -354,11 +353,8 @@ function launchGame() {
 }
 
 function playPiece(originCellId, destinationCellId, pieceName) {
-  console.log(
-    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}&pieceName=${pieceName}`
-  );
   fetch(
-    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}`
+    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}`,
   )
     .then((r) => {
       let tmp = r.json();

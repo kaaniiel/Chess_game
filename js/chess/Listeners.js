@@ -5,13 +5,10 @@ function addCellClickListener(cellElement, color) {
       // Check if any child has class "canBeSelected"
       Array.from(cellElement.children).forEach((element) => {
         if (element.className === "canBeSelected") {
-          console.log(
-            `cell selected for move: (${element.data["xpos"]}, ${element.data["ypos"]}) to (${cellElement.id})`
-          );
           playPiece(
             `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
             cellElement.id,
-            element.data["piece"]
+            element.data["piece"],
           ); // Call the function to move the piece in base.js
           return;
         }
@@ -28,8 +25,6 @@ function addCellClickListener(cellElement, color) {
       return;
     }
 
-    console.log(`Cell clicked: (${cellElement.id})`);
-    console.log(`Piece data:`, cellElement.data);
     const pieceName = cellElement.data["piece"]; // Name
     const xpos = cellElement.data["xpos"]; // letter
     const ypos = cellElement.data["ypos"]; // number
@@ -124,7 +119,6 @@ function computeLineMoves(xpos, ypos, dx, dy, pieceName, color, max = -1) {
 function computePossibleMoves(pieceName, xpos, ypos, color) {
   const direction = color === "white" ? 1 : -1;
   const tmp = checkKingInCheck(color);
-  console.log("Is king in check?", tmp);
   switch (pieceName) {
     case "pawn":
       // forward one
@@ -184,7 +178,6 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
             adjacentLastRound === currentRound - 1 &&
             canMoveTo(adjacentCellId, color).allowed
           ) {
-            console.log("En Passant possible on", adjacentCellId);
             const enPassantY = ypos + direction;
             const enPassantId = `cell-${adjacentX}-${enPassantY}`;
             generateCandidate(enPassantId, pieceName, xpos, ypos);
@@ -262,34 +255,36 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       // Castling castling
 
       // Regarder si le roi a deja bougé
-      const king = document.getElementById(`cell-${xpos}-${ypos}`).data;
-      if (king["nbMoves"] == 0) {
-        const offset = [-1, 1];
-        offset.forEach((dir) => {
-          for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
-            const cellId = `cell-${x}-${ypos}`;
-            const cell = document.getElementById(cellId);
+      if (!checkKingInCheck(color)) {
+        const king = document.getElementById(`cell-${xpos}-${ypos}`).data;
+        if (king["nbMoves"] == 0) {
+          const offset = [-1, 1];
+          offset.forEach((dir) => {
+            for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
+              const cellId = `cell-${x}-${ypos}`;
+              const cell = document.getElementById(cellId);
 
-            if (cell.data["piece"]) {
-              if (cell.data["piece"] === "rook") {
-                const rook = cell.data;
-                if (rook["nbMoves"] == 0) {
-                  generateCandidate(
-                    `cell-${nextLetter(x, dir * -1)}-${ypos}`,
-                    pieceName,
-                    xpos,
-                    ypos
-                  );
+              if (cell.data["piece"]) {
+                if (cell.data["piece"] === "rook") {
+                  const rook = cell.data;
+                  if (rook["nbMoves"] == 0) {
+                    generateCandidate(
+                      `cell-${nextLetter(x, dir * -1)}-${ypos}`,
+                      pieceName,
+                      xpos,
+                      ypos,
+                    );
+                  }
+                  break;
                 }
                 break;
               }
-              break;
             }
-          }
-        });
+          });
+        }
+        // si aucune pieces entre les deux et que ni le roi ni la tour n'ont bougé
+        // alors ajouter les cases de Castling comme candidates
       }
-      // si aucune pieces entre les deux et que ni le roi ni la tour n'ont bougé
-      // alors ajouter les cases de Castling comme candidates
 
       break;
     default:
