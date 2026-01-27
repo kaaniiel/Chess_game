@@ -1,4 +1,3 @@
-
 /* Ensure cells center their children */
 .chess-cell {
   width: 70px;
@@ -118,6 +117,74 @@
   position: absolute;
 }
 
-#game-announcer {
-  top : -54px
+/* Top bar: abandon button + announcer side by side */
+#game-top-bar {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 50;
+}
+
+#game-top-bar #game-announcer {
+  position: static;
+  transform: none;
+}
+
+#game-top-bar #btn-abandon {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+.isCheck {
+  /* Red gradient toward center in back */
+  background: radial-gradient(
+    circle,
+    rgba(255, 0, 0, 0.4) 70%,
+    rgba(255, 0, 0, 0) 100%
+  );
+}
+
+#promotion-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+}
+#promotion-content {
+  background: white;
+  width: 650px;
+  max-width: 95%;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+  font-family: "Segoe UI", sans-serif;
+}
+#promotion-content h2 {
+  background: #34495e;
+  color: white;
+  margin: 0;
+  padding: 15px 20px;
+  font-weight: normal;
+  font-size: 1.5em;
+  text-align: center;
+  border-bottom: 1px solid #2c3e50;
+}
+
+#btn-abandon {
+  display: inline-block;
 }

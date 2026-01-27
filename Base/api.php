@@ -198,8 +198,8 @@ switch ($action) {
             }
 
             $json['round'] = 1;
-
-
+            $json['lastUpdate'] = time();
+            $json["ready"] = [];
             echo json_encode(['success' => true]);
             return $json;
         });
@@ -304,6 +304,7 @@ switch ($action) {
             // On passe au joueur suivant
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
             $json['round'] += 1;
+            $json['lastUpdate'] = time();
             echo json_encode(['success' => true, 'gameState' => $json]);
             return $json;
         });
@@ -385,17 +386,90 @@ switch ($action) {
         $index = (int) $_REQUEST['index'];
         processRoom($roomId, function ($json) use ($index) {
             $json['status'] = 'round_end';
-            $json['lastUpdate'] = time();
+            $json['lastUpdate'] = -1;
             $json['roundStats'] = [
-                'winnerIndex' => $index,
+                'winnerIndex' => ($index + 1) % count($json['players']),
                 'reason' => 'checkmate'
             ];
+            echo json_encode(['index' => $index, 'success' => true, 'gameState' => $json]);
+            return $json;
+        });
+        break;
+
+    case 'promote':
+        $roomId = $_REQUEST['roomId'];
+        $index = (int) $_REQUEST['index'];
+        processRoom($roomId, function ($json) use ($index) {
+            $player = &$json['players'][$index];
+            $pieces = &$player['pieces'];
+
+            $originPiece = $_REQUEST['origin'];
+            $originPiece = substr($originPiece, 5); // Enlève le préfixe "cell-"
+            $destinationPiece = $_REQUEST['destination'];
+            $destinationPiece = substr($destinationPiece, 5); // Enlève le préfixe "cell-"
+            $finalPiece = $_REQUEST['piece']; // queen, rook, bishop, knight
+
+            // Trouver et promouvoir le pion
+            foreach ($pieces['pawn'] as $k => $piece) {
+                if ($piece['position'] === $originPiece) {
+                    $nbMovesPawn = $piece['nbMoves'];
+                    // Supprimer le pion
+                    unset($pieces['pawn'][$k]);
+                    // Ajouter la nouvelle pièce
+                    $pieces[$finalPiece][] = [
+                        'position' => $destinationPiece,
+                        'nbMoves' => $nbMovesPawn,
+                        'lastRoundPlay' => $json['round']
+                    ];
+                    // Réindexer le tableau des pions
+                    $pieces['pawn'] = array_values($pieces['pawn']);
+                    break;
+                }
+            }
+            $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
+            $json['round'] += 1;
             echo json_encode(['success' => true, 'gameState' => $json]);
+            return $json;
+        });
+        break;
+    case 'restart':
+        $roomId = $_REQUEST['roomId'];
+        $index = (int) $_REQUEST['index'];
+
+        processRoom($roomId, function ($json) use ($index) {
+            // Toggle: add index if not present, otherwise remove it
+            if (!in_array($index, $json["ready"])) {
+                $json["ready"][] = $index;
+            } else {
+                $json["ready"] = array_values(array_filter($json["ready"], function ($i) use ($index) {
+                    return $i !== $index;
+                }));
+            }
+
+            $json["lastUpdate"] = time();
+            echo json_encode(['success' => true, 'gameState' => $json]);
+            return $json;
+        });
+        break;
+
+    case 'abandon':
+        $roomId = $_REQUEST['roomId'];
+        $index = (int) $_REQUEST['index'];
+
+        processRoom($roomId, function ($json) use ($index) {
+            $json['status'] = 'round_end';
+            $json['lastUpdate'] = -1;
+            $json['roundStats'] = [
+                'winnerIndex' => ($index + 1) % count($json['players']),
+                'reason' => 'abandon'
+            ];
+            echo json_encode(['index' => $index, 'success' => true, 'gameState' => $json]);
             return $json;
         });
         break;
     default:
         echo json_encode(['error' => 'Action inconnue']);
         break;
+
 }
 ?>

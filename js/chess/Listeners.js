@@ -119,6 +119,7 @@ function computeLineMoves(xpos, ypos, dx, dy, pieceName, color, max = -1) {
 function computePossibleMoves(pieceName, xpos, ypos, color) {
   const direction = color === "white" ? 1 : -1;
   const tmp = checkKingInCheck(color);
+
   switch (pieceName) {
     case "pawn":
       // forward one
@@ -255,36 +256,34 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       // Castling castling
 
       // Regarder si le roi a deja bougé
-      if (!checkKingInCheck(color)) {
-        const king = document.getElementById(`cell-${xpos}-${ypos}`).data;
-        if (king["nbMoves"] == 0) {
-          const offset = [-1, 1];
-          offset.forEach((dir) => {
-            for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
-              const cellId = `cell-${x}-${ypos}`;
-              const cell = document.getElementById(cellId);
+      const king = document.getElementById(`cell-${xpos}-${ypos}`).data;
+      if (king["nbMoves"] == 0) {
+        const offset = [-1, 1];
+        offset.forEach((dir) => {
+          for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
+            const cellId = `cell-${x}-${ypos}`;
+            const cell = document.getElementById(cellId);
 
-              if (cell.data["piece"]) {
-                if (cell.data["piece"] === "rook") {
-                  const rook = cell.data;
-                  if (rook["nbMoves"] == 0) {
-                    generateCandidate(
-                      `cell-${nextLetter(x, dir * -1)}-${ypos}`,
-                      pieceName,
-                      xpos,
-                      ypos,
-                    );
-                  }
-                  break;
+            if (cell.data["piece"]) {
+              if (cell.data["piece"] === "rook") {
+                const rook = cell.data;
+                if (rook["nbMoves"] == 0) {
+                  generateCandidate(
+                    `cell-${nextLetter(x, dir * -1)}-${ypos}`,
+                    pieceName,
+                    xpos,
+                    ypos,
+                  );
                 }
                 break;
               }
+              break;
             }
-          });
-        }
-        // si aucune pieces entre les deux et que ni le roi ni la tour n'ont bougé
-        // alors ajouter les cases de Castling comme candidates
+          }
+        });
       }
+      // si aucune pieces entre les deux et que ni le roi ni la tour n'ont bougé
+      // alors ajouter les cases de Castling comme candidates
 
       break;
     default:
@@ -474,40 +473,26 @@ function clearAllOverlays() {
 }
 
 function isCheckmate(color) {
-  // Checkmate: king is in check and the side has no legal moves.
+  // Return true if `color` is in checkmate (king in check with no legal moves)
   if (!checkKingInCheck(color)) return false;
 
-  // Helper to fetch a cell element
-  function getCell(xChar, y) {
-    if (xChar < "A" || xChar > "H" || y < 1 || y > 8) return null;
-    return document.getElementById(`cell-${xChar}-${y}`) || null;
-  }
-
-  // For each piece of `color`, generate possible moves (they are already filtered
-  // by computePossibleMoves to only include moves that don't leave the king in check).
+  // Scan all pieces of `color` to see if any have legal moves
   for (let xi = "A".charCodeAt(0); xi <= "H".charCodeAt(0); xi++) {
     for (let y = 1; y <= 8; y++) {
-      const xChar = String.fromCharCode(xi);
-      const cell = getCell(xChar, y);
-      if (!cell || !cell.data) continue;
-      if (cell.data.color !== color) continue;
-
-      // Clear any existing overlays before generating
-      clearAllOverlays();
-
-      // Generate moves for this piece
-      computePossibleMoves(cell.data.piece, cell.data.xpos, cell.data.ypos, color);
-
-      // If any overlay was created for this origin, then there is at least one legal move
-      const originOverlays = cell.getElementsByClassName("canBeSelected");
-      if (originOverlays && originOverlays.length > 0) {
+      const cell = document.getElementById(`cell-${String.fromCharCode(xi)}-${y}`);
+      if (cell && cell.data && cell.data.color === color) {
+        const pieceName = cell.data.piece;
+        const xpos = cell.data.xpos;
+        const ypos = cell.data.ypos;
         clearAllOverlays();
-        return false; // not checkmate: at least one legal move
+        computePossibleMoves(pieceName, xpos, ypos, color);
+        const overlays = document.getElementsByClassName("canBeSelected");
+        if (overlays.length > 0) {
+          clearAllOverlays();
+          return false; // found a piece with legal moves
+        }
       }
     }
   }
-
-  // No legal moves found
-  clearAllOverlays();
-  return true;
+  return true; // no pieces have legal moves -> checkmate
 }
