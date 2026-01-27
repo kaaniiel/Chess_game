@@ -1,0 +1,190 @@
+/* Ensure cells center their children */
+.chess-cell {
+  width: 70px;
+  height: 70px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chess-letter {
+  font-size: 20px; /* smaller, less dominant */
+  font-weight: 800;
+  width: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.chess-number {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ffffff;
+}
+
+/* Shift bottom row (letters) so each letter sits centered under its cell
+   Take into account the width of the rank column (30px) and the left
+   padding of the board (10px) we set earlier. Adjust if you change those. */
+.chess-board > .chess-row:last-child {
+  margin-left: 30px;
+}
+
+/* Center children (like the chess board) inside the game container */
+#game-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Chess board styling */
+
+.chess-row {
+  display: flex;
+}
+
+.chess-cell {
+  width: 70px;
+  height: 70px;
+  box-sizing: border-box;
+  /* Retirer le changement de curseur par défaut */
+  cursor: default;
+  /* Retirer la selection de texte */
+  user-select: none;
+}
+
+/* Left numbers (ranks) and bottom letters (files) */
+.chess-number {
+  width: 30px; /* space reserved for rank numbers */
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.chess-letter {
+  width: 70px; /* match cell width */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Small horizontal margin so letters sit nicely inside the green border */
+.chess-board {
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 6px 6px 2px 6px; /* top right bottom left - larger bottom padding for letters */
+  background: transparent;
+  cursor: default;
+  /* Retirer la selection de texte */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.chess-board .chess-row {
+  margin-bottom: 0; /* no extra space between rows */
+}
+
+.hachure {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 0, 0, 0.6),
+    rgba(255, 0, 0, 0.6) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+
+.canBeSelected {
+  /* faire un petit cercle au centre de la case */
+  background-color: green;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  margin: auto;
+  position: absolute;
+}
+
+/* Top bar: abandon button + announcer side by side */
+#game-top-bar {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 50;
+}
+
+#game-top-bar #game-announcer {
+  position: static;
+  transform: none;
+}
+
+#game-top-bar #btn-abandon {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+.isCheck {
+  /* Red gradient toward center in back */
+  background: radial-gradient(
+    circle,
+    rgba(255, 0, 0, 0.4) 70%,
+    rgba(255, 0, 0, 0) 100%
+  );
+}
+
+#promotion-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+}
+#promotion-content {
+  background: white;
+  width: 650px;
+  max-width: 95%;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+  font-family: "Segoe UI", sans-serif;
+}
+#promotion-content h2 {
+  background: #34495e;
+  color: white;
+  margin: 0;
+  padding: 15px 20px;
+  font-weight: normal;
+  font-size: 1.5em;
+  text-align: center;
+  border-bottom: 1px solid #2c3e50;
+}
+
+#btn-abandon {
+  display: inline-block;
+}

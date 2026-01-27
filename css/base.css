@@ -1,121 +1,172 @@
 /* --- GLOBAL & LAYOUT --- */
 .back-link {
-    position:absolute; top:20px; left:20px; 
-    color:white; text-decoration:none; font-weight:bold; 
-    background:rgba(0,0,0,0.4); padding:10px 15px; 
-    border-radius:8px; z-index:100; 
-    display:flex; align-items:center; gap:8px; 
-    transition: background 0.3s;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px 15px;
+  border-radius: 8px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s;
 }
-.back-link:hover { background:rgba(0,0,0,0.6); }
+.back-link:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
 
 .btn-back-game {
-    position: absolute; top: 20px; left: 20px; z-index: 200;
-    padding: 8px 12px; font-size: 0.9em; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 200;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 /* --- GAME CONTAINER --- */
-#game-container { 
-    position: relative; 
-    width: 1000px; 
-    height: 700px; 
-    background: radial-gradient(circle, #27ae60 0%, #2ecc71 100%); 
-    border: 8px solid #ecf0f1; 
-    border-radius: 20px; 
-    box-shadow: 0 0 50px rgba(0,0,0,0.5); 
-    margin: auto; /* Centrer si l'écran est grand */
+#game-container {
+  position: relative;
+  width: 1000px;
+  height: 700px;
+  background: radial-gradient(circle, #484848 0%, #444444 100%);
+  border: 8px solid #ecf0f1;
+  border-radius: 20px;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  margin: auto; /* Centrer si l'écran est grand */
 }
 
 /* --- TABLE & SLOTS --- */
-.table-center { 
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px; height: 300px;
-    border: 2px dashed rgba(255,255,255,0.1);
-    border-radius: 50%;
-    pointer-events: none;
+.table-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.card-slot { position: absolute; width: 80px; height: 120px; transition: all 0.3s; }
-.slot-bottom { bottom: 20px; left: 50%; transform: translateX(-50%); }
-.slot-top { top: 20px; left: 50%; transform: translateX(-50%); }
-.slot-left { top: 50%; left: 20px; transform: translateY(-50%); }
-.slot-right { top: 50%; right: 20px; transform: translateY(-50%); }
+.card-slot {
+  position: absolute;
+  width: 80px;
+  height: 120px;
+  transition: all 0.3s;
+}
+.slot-bottom {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.slot-top {
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.slot-left {
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+}
+.slot-right {
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+}
 
 /* --- JOUEUR (MAIN) --- */
 #my-hand {
-    position: absolute;
-    bottom: 30px; left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    height: 140px;
-    gap: -30px; /* Chevauchement des cartes */
-    z-index: 50;
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 140px;
+  gap: -30px; /* Chevauchement des cartes */
+  z-index: 50;
 }
 
-.card { 
-    width: 80px;
-    height: 120px;
-    margin-left: -15px;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.2); 
-    z-index: 10;
+.card {
+  width: 80px;
+  height: 120px;
+  margin-left: -15px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
-.top-left { top: 5px; left: 5px; }
-.bottom-right { bottom: 5px; right: 5px; transform: rotate(180deg); }
+.top-left {
+  top: 5px;
+  left: 5px;
+}
+.bottom-right {
+  bottom: 5px;
+  right: 5px;
+  transform: rotate(180deg);
+}
 
 /* --- MODAL SCORE --- */
 #score-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    max-height: 100vh;
-    overflow-y: auto;
-    background: rgba(0,0,0,0.85);
-    z-index: 100;
-    justify-content: center;
-    align-items: center;
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
 }
 #score-content {
-    background: white;
-    width: 650px;
-    max-width: 95%;
-    padding: 0;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.6);
-    font-family: 'Segoe UI', sans-serif;
+  background: white;
+  width: 650px;
+  max-width: 95%;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+  font-family: "Segoe UI", sans-serif;
 }
 #score-content h2 {
-    background: #34495e;
-    color: white;
-    margin: 0;
-    padding: 15px 20px;
-    font-weight: normal;
-    font-size: 1.5em;
-    text-align: center;
-    border-bottom: 1px solid #2c3e50;
+  background: #34495e;
+  color: white;
+  margin: 0;
+  padding: 15px 20px;
+  font-weight: normal;
+  font-size: 1.5em;
+  text-align: center;
+  border-bottom: 1px solid #2c3e50;
 }
 
 .stats-box {
-    padding: 20px;
-    border-bottom: 1px solid #ddd;
-    background: #f9f9f9;
+  padding: 20px;
+  border-bottom: 1px solid #ddd;
+  background: #f9f9f9;
 }
 
 .stats-box p {
-    margin: 8px 0; 
-    font-size: 1.1em; 
-    color: #333;
+  margin: 8px 0;
+  font-size: 1.1em;
+  color: #333;
 }
 
 @keyframes popIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

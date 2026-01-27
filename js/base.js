@@ -1,15 +1,16 @@
 let lastStateStr = "";
-
+let lastUpdateTime = 0;
 const suitSymbols = { Coeur: "♥", Carreau: "♦", Trefle: "♣", Pique: "♠" };
 const isRed = (s) => ["Coeur", "Carreau"].includes(s);
 
 // --- 1. INITIALISATION & NAVIGATION ---
 
 window.onload = function () {
-  initGame("base");
+  initGame("chess");
   checkSession();
 };
 
+// afficher l'un des ecrans (lobby, game, etc.)
 function showScreen(id) {
   document
     .querySelectorAll(".screen")
@@ -31,7 +32,7 @@ function enterLobby(rid, admin) {
   const scoreSel = document.getElementById("lobby-param-XXXX");
   scoreSel.onchange = function () {
     fetch(
-      `Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`
+      `Base/api.php?action=updateSettings&roomId=${myRoomId}&param=${this.value}`,
     );
   };
 
@@ -43,10 +44,15 @@ function enterLobby(rid, admin) {
 function startPolling() {
   setInterval(() => {
     if (!myRoomId) return;
-
     fetch(`Base/api.php?action=get&roomId=${myRoomId}`)
-      .then((r) => r.json())
+      .then((r) => {
+        const tmp = r.json();
+        return tmp;
+      })
       .then((data) => {
+        if (data.status !== "round_end") {
+          document.getElementById("score-modal").style.display = "none";
+        }
         if (!data || !data.players) return;
 
         // Mise à jour de mon index si nécessaire
@@ -80,11 +86,17 @@ function startPolling() {
           document.getElementById("score-modal").style.display = "none";
           updateLobbyUI(data);
         } else {
-          updateGameUI(data);
+          if (lastUpdateTime != data.lastUpdate || data.status !== "playing") {
+            console.log("Game status:", data.status);
+            console.log(lastUpdateTime, data.lastUpdate);
+            console.log("Updating game UI...");
+            lastUpdateTime = new Number(data.lastUpdate);
+            updateGameUI(data);
+          }
         }
       })
       .catch((e) => console.error("Polling error:", e));
-  }, 1000);
+  }, 500);
 }
 
 // --- 3. LOGIQUE DU LOBBY ---
@@ -129,7 +141,7 @@ function refreshRoomList() {
                         <button class="btn-blue" onclick="joinGame('${room.id}')">Rejoindre</button>
                     </div>
                 </div>
-            `
+            `,
         )
         .join("");
     });
@@ -176,6 +188,7 @@ function updateLobbyUI(d) {
 
 function updateGameUI(data) {
   // Si on joue, on affiche le jeu et on cache le modal
+  console.log("Game status:", data.status);
   if (data.status === "playing") {
     showScreen("screen-game");
     document.getElementById("score-modal").style.display = "none";
@@ -185,42 +198,123 @@ function updateGameUI(data) {
   else if (data.status === "round_end") {
     showScreen("screen-game");
     renderGame(data); // Affiche la table complète
-    showRoundStats(data.roundStats);
+    showRoundStats(data);
   }
 }
 
-function showRoundStats(stats) {
+function showRoundStats(data) {
   const modal = document.getElementById("score-modal");
   const content = document.getElementById("score-content");
 
-  if (!stats) return;
+  if (!data.roundStats) return;
+  console.log("Round stats:", data.roundStats);
+  const winnerName = data.players[data.roundStats.winnerIndex].name;
+  console.log("Round winner:", winnerName);
 
   // Contenu du modal avec stats random et boutons
+  let reasonStr = "";
+  switch (data.roundStats.reason) {
+    case "checkmate":
+      reasonStr = "échec et mat";
+      break;
+    case "resignation":
+      reasonStr = "abandon";
+      break;
+    case "timeout":
+      reasonStr = "dépassement de temps";
+      break;
+    default:
+      reasonStr = data.roundStats.reason;
+  }
   content.innerHTML = `
-        <h2>Fin du pli !</h2>
+        <h2>Fin de la partie !</h2>
         <div class="stats-box">
-            <p>🏆 Vainqueur du pli : <strong>${stats.winner}</strong></p>
-            <p>✨ Points gagnés : <strong>${stats.points}</strong></p>
-            <p>💬 <em>"${stats.message}"</em></p>
+            <p>🏆 Vainqueur de la partie : <strong>${winnerName}</strong></p>
+            <p>💬 Victoire par: <em>"${reasonStr}"</em></p>
         </div>
         <div class="modal-buttons" style="margin-top:20px; display:flex; justify-content:center; gap:10px;">
             <button onclick="backToLobby()" class="btn-red">Quitter</button>
-            <button onclick="continueGame()" class="btn-green">Continuer</button>
+            <button id="continue-btn" onclick="continueGame()" class="btn-green">Continuer</button>
+        </div>
+        <div class="whos-ready" style="margin-top:15px; font-size:0.9em; color:#555;">
+            Attente des joueurs...
         </div>
     `;
+  let cpt = 0;
+  data.ready.forEach((i) => {
+    if (i === myIndex) {
+      const continueBtn = document.getElementById("continue-btn");
+      continueBtn.innerText = "En attente des autres...";
+    }
+    cpt++;
+  });
 
+  if (cpt === data.players.length) {
+    // Tous prêts, on peut continuer
+    const continueBtn = document.getElementById("continue-btn");
+    continueBtn.innerText = "Aller !";
+    fetch(`Base/api.php?action=startRound&roomId=${myRoomId}`).then(() => {
+      lastUpdateTime = 0; // Forcer la mise à jour
+      modal.style.display = "none";
+    });
+  }
   modal.style.display = "flex";
 }
 
+function showPromotionScreen(originCellId, destinationCellId) {
+  const modal = document.getElementById("promotion-modal");
+  const content = document.getElementById("promotion-content");
+  // Contenu du modal avec stats random et boutons
+  content.innerHTML = `
+        <h2>Promotion !</h2>
+        <p>Votre pion atteint la dernière rangée. Choisissez la pièce pour la promouvoir :</p>
+        <select id="promotion-select">
+            <option value="queen">Reine</option>
+            <option value="rook">Tour</option>
+            <option value="bishop">Fou</option>
+            <option value="knight">Cavalier</option>
+        </select>
+        <div class="modal-buttons" style="margin-top:20px; display:flex; justify-content:center; gap:10px;">
+            <button onclick="cancelPromotion()" class="btn-red">Annuler</button>
+            <button onclick="promote()" class="btn-green">Continuer</button>
+        </div>
+    `;
+
+  modal.dataset.origin = originCellId;
+  modal.dataset.destination = destinationCellId;
+
+  modal.style.display = "flex";
+  // Store origin and destination in modal data attributes
+}
+
+function cancelPromotion() {
+  const modal = document.getElementById("promotion-modal");
+  const content = document.getElementById("promotion-content");
+  content.innerHTML = "";
+  modal.style.display = "none";
+}
 function continueGame() {
   // Appelle l'API pour nettoyer la table et relancer
-  fetch(`Base/api.php?action=nextTrick&roomId=${myRoomId}`).then(() => {
-    document.getElementById("score-modal").style.display = "none";
-  });
+  fetch(`Base/api.php?action=restart&roomId=${myRoomId}&index=${myIndex}`)
+    .then((r) => {
+      let tmp = r.json();
+      return tmp;
+    })
+    .then((data) => {
+      const dt = data.gameState;
+      dt.ready.forEach((i) => {
+        if (i === myIndex) {
+          const continueBtn = document.getElementById("continue-btn");
+          continueBtn.innerText = "En attente des autres...";
+        }
+      });
+      return data;
+    });
 }
 
 function renderGame(data) {
   // Sécurité index
+
   if (myIndex === null) {
     data.players.forEach((p, i) => {
       if (p.name === myName) myIndex = i;
@@ -228,76 +322,217 @@ function renderGame(data) {
   }
 
   const playerCount = data.players.length;
+  const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  const numbers = [8, 7, 6, 5, 4, 3, 2, 1];
+  const firstColor = "rgba(255, 255, 255, 1)";
+  const secondColor = "rgba(147, 96, 8, 1)";
+  const tabDraw = {
+    pawn: "♟",
+    rook: "♜",
+    knight: "♞",
+    bishop: "♝",
+    queen: "♛",
+    king: "♚",
+  };
 
-  // A. MA MAIN
-  const handDiv = document.getElementById("my-hand");
-  handDiv.innerHTML = "";
-  if (data.players[myIndex] && data.players[myIndex].hand) {
-    data.players[myIndex].hand.forEach((card) => {
-      let cDiv = createCard(card);
-      cDiv.onclick = () => playCard(card.id);
-      handDiv.appendChild(cDiv);
+  const boardHTML = document.getElementById("game-container");
+  const announcer = document.getElementById("game-announcer");
+  boardHTML.innerHTML = "";
+  boardHTML.appendChild(announcer);
+
+  // Wrapper that will be centered by CSS
+  const boardWrapper = document.createElement("div");
+  boardWrapper.className = "chess-board";
+
+  let view = "white";
+  if (data.players[myIndex] && data.players[myIndex].color === "black")
+    view = "black";
+
+  // const lettersArr = view === "white" ? letters.slice() : letters.slice().reverse();
+  const lettersArr = letters.slice();
+  const numbersArr =
+    view === "white"
+      ? numbers.slice(0, 8)
+      : numbers.slice(0, 8).slice().reverse();
+
+  // Création des cases du plateau
+  numbersArr.forEach((num, rowIndex) => {
+    const row = num; // numeric rank
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "chess-row";
+
+    const leftNumberDiv = document.createElement("div");
+    leftNumberDiv.className = "chess-number";
+    leftNumberDiv.innerText = num;
+    rowDiv.appendChild(leftNumberDiv);
+
+    lettersArr.forEach((letter, col) => {
+      const cell = document.createElement("div");
+      cell.className = "chess-cell";
+      cell.id = `cell-${letter}-${row}`;
+
+      // Background color handled by CSS but we keep color logic here
+      if (row % 2 == 0) {
+        cell.style.backgroundColor = col % 2 == 0 ? firstColor : secondColor;
+      } else {
+        cell.style.backgroundColor = col % 2 == 0 ? secondColor : firstColor;
+      }
+
+      addCellHoverListener(cell);
+      addCellRightClickListener(cell);
+      cell.data = {};
+      cell.data["xpos"] = letter;
+      cell.data["ypos"] = row;
+      cell.data["round"] = data.round;
+      addCellClickListener(cell, null);
+      rowDiv.appendChild(cell);
     });
-  }
 
-  // B. TABLE (Cartes jouées)
-  // Reset des slots
-  ["slot-bottom", "slot-left", "slot-top", "slot-right"].forEach((id) => {
-    document.getElementById(id).innerHTML = "";
+    boardWrapper.appendChild(rowDiv);
+  });
+  const bottomRow = document.createElement("div");
+  bottomRow.className = "chess-row";
+
+  // add empty corner to align letters under cells
+
+  lettersArr.forEach((element) => {
+    const letterDiv = document.createElement("div");
+    letterDiv.className = "chess-letter";
+    letterDiv.innerText = element;
+    bottomRow.appendChild(letterDiv);
   });
 
-  // Définition des positions visuelles selon le nombre de joueurs
-  // Relatif 0 = Moi (Bottom)
-  // Relatif 1, 2, 3 dépendent du nombre total
-  const slotMap = { 0: "slot-bottom" };
+  boardWrapper.appendChild(bottomRow);
 
-  if (playerCount === 2) {
-    slotMap[1] = "slot-top"; // L'adversaire est en face
-  } else if (playerCount === 3) {
-    slotMap[1] = "slot-left";
-    slotMap[2] = "slot-right";
-  } else {
-    slotMap[1] = "slot-left";
-    slotMap[2] = "slot-top";
-    slotMap[3] = "slot-right";
-  }
+  boardHTML.appendChild(boardWrapper);
 
-  data.table.forEach((play) => {
-    // Calcul de l'index relatif (0 à N-1) par rapport à moi
-    let relativeIndex =
-      (play.playerIndex - myIndex + playerCount) % playerCount;
+  // Render pieces on the board
+  lstPieces = ["pawn", "rook", "knight", "bishop", "queen", "king"];
+  data.players.forEach((p) => {
+    lstPieces.forEach((pieceName) => {
+      p.pieces[pieceName].forEach((piece) => {
+        const pieceElement = document.createElement("div");
+        pieceElement.className = `piece`;
+        pieceElement.textContent = tabDraw[pieceName];
+        pieceElement.style.color = p.color === "white" ? "#fff" : "#111";
+        pieceElement.style.fontSize = "48px";
+        pieceElement.style.textShadow =
+          p.color === "white"
+            ? "0 2px 10px rgba(0, 0, 0, 0.8)"
+            : "0 1px 0 rgba(255, 255, 255, 0.05)";
+        const cell = document.getElementById(`cell-${piece.position}`);
+        if (data.turnIndex === myIndex) {
+          if (p.color === data.players[myIndex].color) {
+            addCellClickListener(cell, p.color);
+          }
+        }
+        cell.data["piece"] = pieceName;
+        cell.data["color"] = p.color;
+        cell.data["position"] = piece.position;
+        cell.data["nbMoves"] = piece.nbMoves;
+        cell.data["lastRoundPlay"] = piece.lastRoundPlay;
+        cell.appendChild(pieceElement);
+      });
+    });
+  });
 
-    let slotId = slotMap[relativeIndex];
-    if (slotId) {
-      let cDiv = createCard(play.card);
-      document.getElementById(slotId).appendChild(cDiv);
+  data.players.forEach((p) => {
+    // Highlight king if in check
+    if (checkKingInCheck(p.color)) {
+      const kingPos = Object.values(p.pieces["king"])[0].position;
+      const kingCell = document.getElementById(`cell-${kingPos}`);
+      if (kingCell) {
+        kingCell.classList.add("isCheck");
+      }
     }
   });
+
+  // Check here if checkmate
+  if (
+    isCheckmate(data.players[data.turnIndex]["color"]) &&
+    data.status === "playing"
+  ) {
+    fetch(
+      `Base/api.php?action=declareCheckmate&roomId=${myRoomId}&index=${myIndex}`,
+    )
+      .then((r) => {
+        let tmp = r.json();
+        return tmp;
+      })
+      .catch((e) => {
+        console.error("Checkmate declaration error:", e);
+      });
+  }
 
   // C. STATUT
   let statusText = `Tour de : ${data.players[data.turnIndex].name}`;
   if (data.turnIndex === myIndex) statusText = "🟢 À TOI DE JOUER !";
-  document.getElementById("game-announcer").innerText = statusText;
+  announcer.innerHTML = statusText;
 }
 
+function promote() {
+  const modal = document.getElementById("promotion-modal");
+  const originCellId = modal.dataset.origin;
+  const destinationCellId = modal.dataset.destination;
+  const select = document.getElementById("promotion-select");
+  const chosenPiece = select.value;
+  console.log(
+    `Base/api.php?action=promote&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&piece=${chosenPiece}`,
+  );
+
+  fetch(
+    `Base/api.php?action=promote&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&piece=${chosenPiece}`,
+  )
+    .then((r) => {
+      let tmp = r.json();
+      return tmp;
+    })
+    .catch((e) => {
+      console.error("Promotion error:", e);
+    });
+  cancelPromotion();
+}
 // --- 5. ACTIONS JOUEUR ---
 
 function launchGame() {
   fetch(`Base/api.php?action=startRound&roomId=${myRoomId}`);
 }
 
-function playCard(cid) {
-  fetch(
-    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&cardId=${cid}`
+function playPiece(originCellId, destinationCellId, pieceName) {
+  if (
+    pieceName == "pawn" &&
+    (destinationCellId.endsWith("8") || destinationCellId.endsWith("1"))
+  ) {
+    // Promotion logic can be added here
+    showPromotionScreen(originCellId, destinationCellId);
+    return;
+  }
+  console.log(
+    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}&pieceName=${pieceName}`,
   );
+  fetch(
+    `Base/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}`,
+  )
+    .then((r) => {
+      let tmp = r.json();
+      return tmp;
+    })
+    .catch((e) => {
+      console.error("Play piece error:", e);
+    });
 }
 
 function backToLobby() {
-  showConfirm("Retourner au salon ? (Cela réinitialisera les scores)", () => {
+  showConfirm("Retourner au salon ?", () => {
     fetch(`Base/api.php?action=backToLobby&roomId=${myRoomId}`);
   });
 }
 
+function abandonGame() {
+  showConfirm("Abandonner la partie ?", () => {
+    fetch(`Base/api.php?action=abandon&roomId=${myRoomId}&index=${myIndex}`);
+  });
+}
 // --- 6. HELPERS GRAPHIQUES ---
 
 function createCard(c) {

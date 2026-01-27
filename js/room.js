@@ -42,12 +42,12 @@ function checkSession() {
     // refreshRoomList doit être défini dans le fichier spécifique
     if (typeof refreshRoomList === "function") {
       refreshRoomList();
-      /* setInterval(() => {
+      setInterval(() => {
         const home = document.getElementById("screen-home");
         if (home && home.classList.contains("active")) {
           refreshRoomList();
         }
-      }, 5000); */
+      }, 5000);
     }
   }
 }
@@ -88,9 +88,7 @@ function joinGame(roomId = null) {
   if (btn) btn.disabled = true;
 
   let inputName = document.getElementById("username").value.trim();
-  const c = roomId
-    ? roomId
-    : document.getElementById("roomCodeInput").value.trim();
+  const c = roomId ? roomId : document.getElementById("roomCodeInput").value.trim();
 
   if (!inputName) {
     if (btn) btn.disabled = false;
@@ -101,9 +99,7 @@ function joinGame(roomId = null) {
     return showError("Code manquant");
   }
 
-  fetch(
-    `Base/api.php?action=join&roomId=${c}&name=${encodeURIComponent(inputName)}`
-  )
+  fetch(`Base/api.php?action=join&roomId=${c}&name=${encodeURIComponent(inputName)}`)
     .then((r) => r.json())
     .then((d) => {
       if (d.error) {
@@ -123,9 +119,7 @@ function leaveLobby() {
   showConfirm("Quitter la partie ?", function () {
     if (myRoomId && myName) {
       fetch(
-        `Base/api.php?action=leave&roomId=${myRoomId}&name=${encodeURIComponent(
-          myName
-        )}`
+        `Base/api.php?action=leave&roomId=${myRoomId}&name=${encodeURIComponent(myName)}`
       ).finally(() => {
         sessionStorage.clear();
         window.location.reload();
@@ -152,9 +146,7 @@ function cancelGame() {
 
 // --- GESTION DES ÉCRANS ---
 function showScreen(id) {
-  document
-    .querySelectorAll(".screen")
-    .forEach((s) => s.classList.remove("active"));
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   const el = document.getElementById(id);
   if (el) el.classList.add("active");
 }
