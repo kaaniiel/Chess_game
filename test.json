@@ -1,0 +1,67 @@
+{
+    "id": "24DE",
+    "admin": "Will",
+    "status": "playing",
+    "players": [
+        {
+            "name": "Will",
+            "color": "black",
+            "pieces": {
+                "rook": [],
+                "pawn": [],
+                "knight": [],
+                "bishop": [],
+                "queen": [
+                    {
+                        "position": "F-2",
+                        "nbMoves": 3,
+                        "lastRoundPlay": 10
+                    },
+                    {
+                        "position": "G-5",
+                        "nbMoves": 8,
+                        "lastRoundPlay": 19
+                    }
+                ],
+                "king": [
+                    {
+                        "position": "E-8",
+                        "nbMoves": 0,
+                        "lastRoundPlay": -1
+                    }
+                ]
+            }
+        },
+        {
+            "name": "test",
+            "color": "white",
+            "pieces": {
+                "rook": [],
+                "pawn": [
+                    {
+                        "position": "A-5",
+                        "nbMoves": 5,
+                        "lastRoundPlay": 18
+                    }
+                ],
+                "knight": [],
+                "bishop": [],
+                "queen": [],
+                "king": [
+                    {
+                        "position": "H-1",
+                        "nbMoves": 3,
+                        "lastRoundPlay": 9
+                    }
+                ]
+            }
+        }
+    ],
+    "turnIndex": 1,
+    "round": 20,
+    "lastUpdate": 1769477471,
+    "roundStats": {
+        "winnerIndex": 0,
+        "reason": "checkmate"
+    }
+}

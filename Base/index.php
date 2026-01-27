@@ -144,6 +144,10 @@
         <div id="score-content"></div>
     </div>
 
+    <div id="promotion-modal" style="display:none;">
+        <div id="promotion-content"></div>
+    </div>
+
     <!-- POPUP D'ERREUR PERSONNALISÉE -->
     <div id="error-modal" class="modal-overlay">
         <div class="modal-box error-box">
