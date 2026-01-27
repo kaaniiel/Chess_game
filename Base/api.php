@@ -388,10 +388,10 @@ switch ($action) {
             $json['status'] = 'round_end';
             $json['lastUpdate'] = -1;
             $json['roundStats'] = [
-                'winnerIndex' => $index,
+                'winnerIndex' => ($index + 1) % count($json['players']),
                 'reason' => 'checkmate'
             ];
-            echo json_encode(['success' => true, 'gameState' => $json]);
+            echo json_encode(['index' => $index, 'success' => true, 'gameState' => $json]);
             return $json;
         });
         break;
@@ -448,6 +448,22 @@ switch ($action) {
 
             $json["lastUpdate"] = time();
             echo json_encode(['success' => true, 'gameState' => $json]);
+            return $json;
+        });
+        break;
+
+    case 'abandon':
+        $roomId = $_REQUEST['roomId'];
+        $index = (int) $_REQUEST['index'];
+
+        processRoom($roomId, function ($json) use ($index) {
+            $json['status'] = 'round_end';
+            $json['lastUpdate'] = -1;
+            $json['roundStats'] = [
+                'winnerIndex' => ($index + 1) % count($json['players']),
+                'reason' => 'abandon'
+            ];
+            echo json_encode(['index' => $index, 'success' => true, 'gameState' => $json]);
             return $json;
         });
         break;

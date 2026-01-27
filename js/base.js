@@ -43,9 +43,6 @@ function enterLobby(rid, admin) {
 
 function startPolling() {
   setInterval(() => {
-    if (data.status !== "round_end") {
-      document.getElementById("score-modal").style.display = "none";
-    }
     if (!myRoomId) return;
     fetch(`Base/api.php?action=get&roomId=${myRoomId}`)
       .then((r) => {
@@ -53,6 +50,9 @@ function startPolling() {
         return tmp;
       })
       .then((data) => {
+        if (data.status !== "round_end") {
+          document.getElementById("score-modal").style.display = "none";
+        }
         if (!data || !data.players) return;
 
         // Mise à jour de mon index si nécessaire
@@ -86,7 +86,7 @@ function startPolling() {
           document.getElementById("score-modal").style.display = "none";
           updateLobbyUI(data);
         } else {
-          if (lastUpdateTime != data.lastUpdate) {
+          if (lastUpdateTime != data.lastUpdate || data.status !== "playing") {
             console.log("Game status:", data.status);
             console.log(lastUpdateTime, data.lastUpdate);
             console.log("Updating game UI...");
@@ -528,6 +528,11 @@ function backToLobby() {
   });
 }
 
+function abandonGame() {
+  showConfirm("Abandonner la partie ?", () => {
+    fetch(`Base/api.php?action=abandon&roomId=${myRoomId}&index=${myIndex}`);
+  });
+}
 // --- 6. HELPERS GRAPHIQUES ---
 
 function createCard(c) {
