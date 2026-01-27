@@ -5,13 +5,10 @@ function addCellClickListener(cellElement, color) {
       // Check if any child has class "canBeSelected"
       Array.from(cellElement.children).forEach((element) => {
         if (element.className === "canBeSelected") {
-          console.log(
-            `cell selected for move: (${element.data["xpos"]}, ${element.data["ypos"]}) to (${cellElement.id})`
-          );
           playPiece(
             `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
             cellElement.id,
-            element.data["piece"]
+            element.data["piece"],
           ); // Call the function to move the piece in base.js
           return;
         }
@@ -28,8 +25,6 @@ function addCellClickListener(cellElement, color) {
       return;
     }
 
-    console.log(`Cell clicked: (${cellElement.id})`);
-    console.log(`Piece data:`, cellElement.data);
     const pieceName = cellElement.data["piece"]; // Name
     const xpos = cellElement.data["xpos"]; // letter
     const ypos = cellElement.data["ypos"]; // number
@@ -184,7 +179,6 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
             adjacentLastRound === currentRound - 1 &&
             canMoveTo(adjacentCellId, color).allowed
           ) {
-            console.log("En Passant possible on", adjacentCellId);
             const enPassantY = ypos + direction;
             const enPassantId = `cell-${adjacentX}-${enPassantY}`;
             generateCandidate(enPassantId, pieceName, xpos, ypos);
@@ -266,15 +260,10 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       if (king["nbMoves"] == 0) {
         const offset = [-1, 1];
         offset.forEach((dir) => {
-          for (
-            let x = nextLetter(xpos, dir);
-            x <= "H" && x >= "A";
-            x = nextLetter(x, dir)
-          ) {
+          for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
             const cellId = `cell-${x}-${ypos}`;
             const cell = document.getElementById(cellId);
 
-            if (!cell) break;
             if (cell.data["piece"]) {
               if (cell.data["piece"] === "rook") {
                 const rook = cell.data;
@@ -283,7 +272,7 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
                     `cell-${nextLetter(x, dir * -1)}-${ypos}`,
                     pieceName,
                     xpos,
-                    ypos
+                    ypos,
                   );
                 }
                 break;
@@ -337,14 +326,8 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       // basic EN PASSANT handling: pawn moves diagonally into empty square
       let capturedBackup = null;
       if (originData.piece === "pawn" && originX !== targetX && !targetData) {
-        const capturedCell = document.getElementById(
-          `cell-${targetX}-${originY}`
-        );
-        if (
-          capturedCell &&
-          capturedCell.data &&
-          capturedCell.data.piece === "pawn"
-        ) {
+        const capturedCell = document.getElementById(`cell-${targetX}-${originY}`);
+        if (capturedCell && capturedCell.data && capturedCell.data.piece === "pawn") {
           capturedBackup = { ...capturedCell.data };
           delete capturedCell.data;
         }
@@ -358,9 +341,7 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       if (targetData) targetCell.data = targetData;
       else delete targetCell.data;
       if (capturedBackup) {
-        const capturedCell = document.getElementById(
-          `cell-${targetX}-${originY}`
-        );
+        const capturedCell = document.getElementById(`cell-${targetX}-${originY}`);
         if (capturedCell) capturedCell.data = capturedBackup;
       }
 
@@ -387,15 +368,8 @@ function checkKingInCheck(color) {
   let kingY = null;
   outer: for (let xi = "A".charCodeAt(0); xi <= "H".charCodeAt(0); xi++) {
     for (let y = 1; y <= 8; y++) {
-      const cell = document.getElementById(
-        `cell-${String.fromCharCode(xi)}-${y}`
-      );
-      if (
-        cell &&
-        cell.data &&
-        cell.data.piece === "king" &&
-        cell.data.color === color
-      ) {
+      const cell = document.getElementById(`cell-${String.fromCharCode(xi)}-${y}`);
+      if (cell && cell.data && cell.data.piece === "king" && cell.data.color === color) {
         kingX = String.fromCharCode(xi);
         kingY = y;
         break outer;
@@ -417,8 +391,7 @@ function checkKingInCheck(color) {
     const px = String.fromCharCode(kingX.charCodeAt(0) + dc);
     const py = kingY - oppDir;
     const c = getCell(px, py);
-    if (c && c.data && c.data.piece === "pawn" && c.data.color === opponent)
-      return true;
+    if (c && c.data && c.data.piece === "pawn" && c.data.color === opponent) return true;
   }
 
   // 2) Knight attacks
@@ -436,8 +409,7 @@ function checkKingInCheck(color) {
     const nx = String.fromCharCode(kingX.charCodeAt(0) + dx);
     const ny = kingY + dy;
     const c = getCell(nx, ny);
-    if (c && c.data && c.data.piece === "knight" && c.data.color === opponent)
-      return true;
+    if (c && c.data && c.data.piece === "knight" && c.data.color === opponent) return true;
   }
 
   // 3) Adjacent enemy king
@@ -447,8 +419,7 @@ function checkKingInCheck(color) {
       const nx = String.fromCharCode(kingX.charCodeAt(0) + dx);
       const ny = kingY + dy;
       const c = getCell(nx, ny);
-      if (c && c.data && c.data.piece === "king" && c.data.color === opponent)
-        return true;
+      if (c && c.data && c.data.piece === "king" && c.data.color === opponent) return true;
     }
   }
 
@@ -508,9 +479,7 @@ function isCheckmate(color) {
   // Scan all pieces of `color` to see if any have legal moves
   for (let xi = "A".charCodeAt(0); xi <= "H".charCodeAt(0); xi++) {
     for (let y = 1; y <= 8; y++) {
-      const cell = document.getElementById(
-        `cell-${String.fromCharCode(xi)}-${y}`
-      );
+      const cell = document.getElementById(`cell-${String.fromCharCode(xi)}-${y}`);
       if (cell && cell.data && cell.data.color === color) {
         const pieceName = cell.data.piece;
         const xpos = cell.data.xpos;

@@ -69,11 +69,9 @@ function saveSession(rid, idx, name) {
 function createGame() {
   let name = document.getElementById("username").value.trim();
   if (!name) return showError("Veuillez entrer un pseudo !");
-  console.log(`Base/api.php?action=create&name=${encodeURIComponent(name)}`);
   fetch(`Base/api.php?action=create&name=${encodeURIComponent(name)}`)
     .then((r) => {
       let tmp = r.json();
-      console.log(tmp);
       return tmp;
     })
     .then((d) => {
@@ -119,7 +117,7 @@ function leaveLobby() {
   showConfirm("Quitter la partie ?", function () {
     if (myRoomId && myName) {
       fetch(
-        `Base/api.php?action=leave&roomId=${myRoomId}&name=${encodeURIComponent(myName)}`
+        `Base/api.php?action=leave&roomId=${myRoomId}&name=${encodeURIComponent(myName)}`,
       ).finally(() => {
         sessionStorage.clear();
         window.location.reload();
