@@ -177,7 +177,7 @@
     </div>
 
     <script src="../js/base.js?v=<?= filemtime('../js/base.js') ?>"></script>
-    <script src="../js/chess/Chess.js?v=<?= filemtime('../js/chess/Chess.js') ?>"></script>
+    <script src="../js/chess/chess.js?v=<?= filemtime('../js/chess/chess.js') ?>"></script>
     <script src="../js/chess/listeners.js?v=<?= filemtime('../js/chess/listeners.js') ?>"></script>
 </body>
 
