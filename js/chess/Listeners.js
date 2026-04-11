@@ -65,5 +65,3 @@ function addCellRightClickListener(cellElement) {
     cellElement.className += " hachure";
   });
 }
-
-

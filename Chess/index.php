@@ -88,9 +88,10 @@
                     <div class="setting-row">
                         <label></label>
                         <select id="lobby-param-XXXX" disabled>
-                            <!-- <option value="X">X</option>
-                            <option value="XX" selected>XX</option>
-                            <option value="XXX">XXX</option> -->
+                            <option value="unlimited" selected>Illimite</option>
+                            <option value="3600">1h</option>
+                            <option value="1800">30 min</option>
+                            <option value="900">15 min</option>
                         </select>
                     </div>
                 </div>
@@ -106,7 +107,7 @@
                     <p>En attente du chef de table...</p>
                 </div>
 
-                <button onclick="leaveLobby()" class="btn-red" style="margin-top: 15px;">Quitter le salon</button>
+                <button onclick="leaveLobby()" class="btn-red">Quitter le salon</button>
             </div>
         </div>
     </div>
@@ -120,13 +121,19 @@
             <aside class="game-sidebar">
                 <div id="game-players-info" class="game-players-info"></div>
 
+                <div class="sidebar-timer-box">
+                    <h3>Timer</h3>
+                    <div id="game-timer-mode" class="game-timer-mode">Chrono</div>
+                    <div id="game-timer-value" class="game-timer-value">00:00:00</div>
+                </div>
+
                 <div class="sidebar-turn-box">
                     <h3>Tour en cours</h3>
                     <div id="game-announcer" class="game-announcer">Chargement...</div>
                 </div>
 
-                <div class="sidebar-tabs">
-                    <button class="sidebar-tab active" type="button">Historique</button>
+                <div class="sidebar-section-title">
+                    <h3>Historique</h3>
                 </div>
 
                 <div class="sidebar-tab-panels">
@@ -176,8 +183,8 @@
     </div>
 
     <script src="../js/base.js?v=<?= filemtime('../js/base.js') ?>"></script>
-    <script src="../js/chess/chess.js?v=<?= filemtime('../js/chess/chess.js') ?>"></script>
-    <script src="../js/chess/listeners.js?v=<?= filemtime('../js/chess/listeners.js') ?>"></script>
+    <script src="../js/chess.js?v=<?= filemtime('../js/chess.js') ?>"></script>
+    <script src="../js/Chess/listeners.js?v=<?= filemtime('../js/Chess/listeners.js') ?>"></script>
 </body>
 
 </html>
