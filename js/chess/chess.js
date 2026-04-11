@@ -311,11 +311,11 @@ function promote() {
 
 function playPiece(originCellId, destinationCellId, pieceName, tag) {
   console.log("Playing piece:", { originCellId, destinationCellId, pieceName, tag });
-   console.log(
+  console.log(
     `Chess/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}&pieceName=${pieceName}&tag=${tag}`,
   ); 
-  /* fetch(
-    `Chess/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}`,
+  fetch(
+    `Chess/api.php?action=play&roomId=${myRoomId}&index=${myIndex}&origin=${originCellId}&destination=${destinationCellId}&player=${myName}&pieceName=${pieceName}&tag=${tag}`,
   )
     .then((r) => {
       let tmp = r.json();
@@ -323,7 +323,7 @@ function playPiece(originCellId, destinationCellId, pieceName, tag) {
     })
     .catch((e) => {
       console.error("Play piece error:", e);
-    }); */
+    });
 }
 
 function abandonGame() {
@@ -534,38 +534,56 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
       computeLineMoves(xpos, ypos, 1, -1, pieceName, color, 1); // DOWN-RIGHT
       computeLineMoves(xpos, ypos, -1, -1, pieceName, color, 1); // DOWN-LEFT
 
-      // Castling castling
-
-      // Regarder si le roi a deja bougé
       const king = document.getElementById(`cell-${xpos}-${ypos}`).data;
-      if (king["nbMoves"] == 0) {
-        const offset = [-1, 1];
-        offset.forEach((dir) => {
-          for (let x = nextLetter(xpos, dir); x <= "H" || x >= "A"; x = nextLetter(x, dir)) {
-            const cellId = `cell-${x}-${ypos}`;
-            const cell = document.getElementById(cellId);
+      const castleRank = color === "white" ? 1 : 8;
+      if (king["nbMoves"] == 0 && xpos === "E" && ypos === castleRank && !checkKingInCheck(color)) {
+        const castlings = [
+          {
+            rookX: "H",
+            kingDestinationX: "G",
+            emptyFiles: ["F", "G"],
+            kingPathFiles: ["F", "G"],
+          },
+          {
+            rookX: "A",
+            kingDestinationX: "C",
+            emptyFiles: ["B", "C", "D"],
+            kingPathFiles: ["D", "C"],
+          },
+        ];
 
-            if (cell.data["piece"]) {
-              if (cell.data["piece"] === "rook") {
-                const rook = cell.data;
-                if (rook["nbMoves"] == 0) {
-                  generateCandidate(
-                    `cell-${nextLetter(x, dir * -1)}-${ypos}`,
-                    pieceName,
-                    xpos,
-                    ypos,
-                    tag = CHESS_TAGS.CASTLING
-                  );
-                }
-                break;
-              }
-              break;
-            }
+        castlings.forEach((castle) => {
+          const rookCell = document.getElementById(`cell-${castle.rookX}-${ypos}`);
+          if (
+            !rookCell ||
+            !rookCell.data ||
+            rookCell.data["piece"] !== "rook" ||
+            rookCell.data["color"] !== color ||
+            rookCell.data["nbMoves"] != 0
+          ) {
+            return;
           }
+
+          const pathBlocked = castle.emptyFiles.some((file) => {
+            const pathCell = document.getElementById(`cell-${file}-${ypos}`);
+            return pathCell && pathCell.data && pathCell.data["piece"];
+          });
+          if (pathBlocked) return;
+
+          const kingSafe = castle.kingPathFiles.every((file) =>
+            isKingMoveSafe(`cell-${xpos}-${ypos}`, `cell-${file}-${ypos}`, color),
+          );
+          if (!kingSafe) return;
+
+          generateCandidate(
+            `cell-${castle.kingDestinationX}-${ypos}`,
+            pieceName,
+            xpos,
+            ypos,
+            tag = CHESS_TAGS.CASTLING,
+          );
         });
       }
-      // si aucune pieces entre les deux et que ni le roi ni la tour n'ont bougé
-      // alors ajouter les cases de Castling comme candidates
 
       break;
     default:
@@ -639,6 +657,30 @@ function computePossibleMoves(pieceName, xpos, ypos, color) {
 
 function nextLetter(letter, offset) {
   return String.fromCharCode(letter.charCodeAt(0) + offset);
+}
+
+function isKingMoveSafe(originCellId, targetCellId, color) {
+  const originCell = document.getElementById(originCellId);
+  const targetCell = document.getElementById(targetCellId);
+
+  if (!originCell || !originCell.data || !targetCell) return false;
+
+  const originData = { ...originCell.data };
+  const targetData = targetCell.data ? { ...targetCell.data } : null;
+  const [targetX, targetY] = targetCell.id.split("-").slice(1);
+
+  targetCell.data = { ...originData };
+  targetCell.data["xpos"] = targetX;
+  targetCell.data["ypos"] = parseInt(targetY, 10);
+  delete originCell.data;
+
+  const safe = !checkKingInCheck(color);
+
+  originCell.data = originData;
+  if (targetData) targetCell.data = targetData;
+  else delete targetCell.data;
+
+  return safe;
 }
 
 function checkKingInCheck(color) {

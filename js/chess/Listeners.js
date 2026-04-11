@@ -6,8 +6,6 @@ function addCellClickListener(cellElement, color) {
       // Check if any child has class "canBeSelected"
       Array.from(cellElement.children).forEach((element) => {
         if (element.className === "canBeSelected") {
-          console.log("DEBUG : ", element.data);
-          console.log("DEBUG : ", JSON.stringify(element.data.tags));
           playPiece(
             `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
             cellElement.id,
