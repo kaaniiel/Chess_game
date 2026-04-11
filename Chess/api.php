@@ -393,6 +393,13 @@ switch ($action) {
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
             $json['round'] += 1;
             $json['lastUpdate'] = time();
+            $json['history'][] = [
+                'playerIndex' => $index,
+                'origin' => $origin,
+                'destination' => $destination,
+                'pieceName' => $pieceName,
+                'tag' => $tag
+            ];
             $hasMovedPiece = $movedPiece ? "has moved" : "have not moved";
             echo json_encode(['success' => true, 'tag' => $tag, 'infos' => "piece $pieceName $hasMovedPiece from $origin to $destination",  'gameState' => $json]);
             return $json;

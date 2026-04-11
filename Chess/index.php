@@ -112,37 +112,36 @@
     </div>
 
     <div id="screen-game" class="screen">
-        <div id="game-top-bar" class="game-top-bar">
-            <!--div id="game-timer" class="game-timer">00:00</div>-->
-            <div id="game-players-info" class="game-players-info"></div>
-            <div id="game-announcer" class="game-announcer">Chargement...</div>
-            <button id="btn-abandon" class="btn-red"
-                style="padding: 8px 12px; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"
-                onclick="abandonGame()">
-                <i class="fas fa-arrow-left"></i> Abandonner
-            </button>
-        </div>
-
-        <div id="game-container">
-
-            <!-- <div class="table-center">
-                <div id="slot-top" class="card-slot slot-top"></div>
-                <div id="slot-left" class="card-slot slot-left"></div>
-                <div id="slot-right" class="card-slot slot-right"></div>
-                <div id="slot-bottom" class="card-slot slot-bottom"></div>
+        <div class="game-layout">
+            <div class="game-main">
+                <div id="game-container"></div>
             </div>
 
-            <div id="players-area">
-                <div id="player-0"></div>
-                <div id="player-1"></div>
-                <div id="player-2"></div>
-                <div id="player-3"></div>
-            </div>
+            <aside class="game-sidebar">
+                <div id="game-players-info" class="game-players-info"></div>
 
-            <div id="my-hand"></div>
- -->
+                <div class="sidebar-turn-box">
+                    <h3>Tour en cours</h3>
+                    <div id="game-announcer" class="game-announcer">Chargement...</div>
+                </div>
+
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" type="button">Historique</button>
+                </div>
+
+                <div class="sidebar-tab-panels">
+                    <div class="sidebar-panel active">
+                        <div id="game-history" class="game-history-list">
+                            <p class="history-empty">Aucun coup pour le moment.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-abandon" class="btn-red" onclick="abandonGame()">
+                    <i class="fas fa-arrow-left"></i> Abandonner
+                </button>
+            </aside>
         </div>
-
     </div>
 
     <div id="score-modal">

@@ -166,7 +166,6 @@ function renderGame(data) {
   const boardHTML = document.getElementById("game-container");
   const announcer = document.getElementById("game-announcer");
   boardHTML.innerHTML = "";
-  boardHTML.appendChild(announcer);
 
   // Wrapper that will be centered by CSS
   const boardWrapper = document.createElement("div");
@@ -297,6 +296,26 @@ function renderGame(data) {
   let statusText = `Tour de : ${data.players[data.turnIndex].name}`;
   if (data.turnIndex === myIndex) statusText = "🟢 À TOI DE JOUER !";
   announcer.innerHTML = statusText;
+
+  renderHistory(data);
+}
+
+function renderHistory(data) {
+  const historyContainer = document.getElementById("game-history");
+  if (!historyContainer) return;
+
+  const history = Array.isArray(data.history) ? data.history : [];
+  if (history.length === 0) {
+    historyContainer.innerHTML = '<p class="history-empty">Aucun coup pour le moment.</p>';
+    return;
+  }
+  console.log("Game history:", history);
+
+  historyContainer.innerHTML = history
+    .slice()
+    .reverse()
+    .map((entry, idx) => `<p class="history-item">${history.length - idx}. ${entry.playerIndex === myIndex ? 'Toi' : data.players[entry.playerIndex].name}: ${entry.pieceName} from ${entry.origin} to ${entry.destination}</p>`)
+    .join("");
 }
 
 function promote() {
