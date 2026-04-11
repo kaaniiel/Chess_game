@@ -99,6 +99,20 @@ function generatePieces()
     return $board;
 }
 
+function parseTimeControl($raw)
+{
+    $value = trim((string) $raw);
+    switch ($value) {
+        case '3600':
+        case '1800':
+        case '900':
+            return $value;
+        case 'unlimited':
+        default:
+            return 'unlimited';
+    }
+}
+
 function movePiece(&$playerPieces, &$pieceName, &$origin, &$destination, &$json) {
     $pieceCategory = &$playerPieces[$pieceName] ?? [];
     foreach ($pieceCategory as &$piece) {
@@ -193,7 +207,10 @@ switch ($action) {
             'round' => 0,
             'lastUpdate' => time(),
             'roundStats' => [],
-            'history' => []
+            'history' => [],
+            'param' => 'unlimited',
+            'roundStartedAt' => null,
+            'timeLimitSeconds' => null
         ];
 
         file_put_contents($dataDir . 'room_' . $roomId . '.json', json_encode($gameState));
@@ -228,9 +245,9 @@ switch ($action) {
         $roomId = $_REQUEST['roomId'];
         // Ici, vous pouvez récupérer et appliquer les paramètres envoyés
         processRoom($roomId, function ($json) {
-            $limit = isset($_REQUEST['param']) ? $_REQUEST['param'] : null;
-            if ($limit)
-                $json['param'] = $limit;
+            $limit = isset($_REQUEST['param']) ? $_REQUEST['param'] : 'unlimited';
+            $json['param'] = parseTimeControl($limit);
+            $json['timeLimitSeconds'] = $json['param'] === 'unlimited' ? null : (int) $json['param'];
 
             echo json_encode(['success' => true]);
             return $json;
@@ -246,6 +263,7 @@ switch ($action) {
                 return null;
             }
             $pieces = generatePieces();
+            $timeParam = isset($json['param']) ? parseTimeControl($json['param']) : 'unlimited';
             $firstPlayerIndex = rand(0, count($json['players']) - 1);
             $json['status'] = 'playing';
             $json['turnIndex'] = $firstPlayerIndex;
@@ -270,6 +288,11 @@ switch ($action) {
             }
 
             $json['round'] = 1;
+            $json['history'] = [];
+            $json['roundStats'] = [];
+            $json['param'] = $timeParam;
+            $json['roundStartedAt'] = time();
+            $json['timeLimitSeconds'] = $timeParam === 'unlimited' ? null : (int) $timeParam;
             $json['lastUpdate'] = time();
             $json["ready"] = [];
             echo json_encode(['success' => true]);
@@ -465,6 +488,10 @@ switch ($action) {
             foreach ($json['players'] as &$p)
                 $p['hand'] = [];
             $json['turnIndex'] = 0;
+            $json['history'] = [];
+            $json['roundStats'] = [];
+            $json['roundStartedAt'] = null;
+            $json['timeLimitSeconds'] = isset($json['param']) && $json['param'] !== 'unlimited' ? (int) $json['param'] : null;
             echo json_encode(['success' => true]);
             return $json;
         });
@@ -472,9 +499,41 @@ switch ($action) {
 
     // 7. GET STATE
     case 'get':
-        $f = $dataDir . 'room_' . preg_replace('/[^A-Z0-9]/', '', $_REQUEST['roomId']) . '.json';
-        if (file_exists($f))
-            echo file_get_contents($f);
+        $roomId = $_REQUEST['roomId'];
+        processRoom($roomId, function ($json) {
+            if (!$json) {
+                echo json_encode(['error' => 'Salle introuvable']);
+                return null;
+            }
+
+            $hasChanged = false;
+
+            if (
+                isset($json['status']) &&
+                $json['status'] === 'playing' &&
+                isset($json['param']) &&
+                $json['param'] !== 'unlimited' &&
+                isset($json['roundStartedAt']) &&
+                $json['roundStartedAt']
+            ) {
+                $limit = isset($json['timeLimitSeconds']) ? (int) $json['timeLimitSeconds'] : (int) $json['param'];
+                $elapsed = time() - (int) $json['roundStartedAt'];
+                $remaining = $limit - $elapsed;
+                if ($remaining <= 0) {
+                    $json['status'] = 'round_end';
+                    $json['lastUpdate'] = -1;
+                    $json['history'] = [];
+                    $json['roundStats'] = [
+                        'winnerIndex' => ($json['turnIndex'] + 1) % count($json['players']),
+                        'reason' => 'timeout'
+                    ];
+                    $hasChanged = true;
+                }
+            }
+
+            echo json_encode($json);
+            return $hasChanged ? $json : null;
+        });
         break;
 
     case 'declareCheckmate':
@@ -483,6 +542,7 @@ switch ($action) {
         processRoom($roomId, function ($json) use ($index) {
             $json['status'] = 'round_end';
             $json['lastUpdate'] = -1;
+            $json['history'] = [];
             $json['roundStats'] = [
                 'winnerIndex' => ($index + 1) % count($json['players']),
                 'reason' => 'checkmate'
@@ -496,6 +556,11 @@ switch ($action) {
         $roomId = $_REQUEST['roomId'];
         $index = (int) $_REQUEST['index'];
         processRoom($roomId, function ($json) use ($index) {
+            if ($json['turnIndex'] !== $index) {
+                echo json_encode(['error' => 'Ce n\'est pas votre tour !']);
+                return null;
+            }
+
             $player = &$json['players'][$index];
             $pieces = &$player['pieces'];
 
@@ -505,7 +570,26 @@ switch ($action) {
             $destinationPiece = substr($destinationPiece, 5); // Enlève le préfixe "cell-"
             $finalPiece = $_REQUEST['piece']; // queen, rook, bishop, knight
 
+            $allowedPromotions = ['queen', 'rook', 'bishop', 'knight'];
+            if (!in_array($finalPiece, $allowedPromotions, true)) {
+                echo json_encode(['error' => 'Pièce de promotion invalide']);
+                return null;
+            }
+
+            // Capture éventuelle sur la case d'arrivée (promotion avec prise)
+            $opponentPieces = &$json['players'][1 - $index]['pieces'];
+            foreach ($opponentPieces as $pieceType => &$pieceList) {
+                foreach ($pieceList as $k => $p) {
+                    if ($p['position'] === $destinationPiece) {
+                        unset($opponentPieces[$pieceType][$k]);
+                        $opponentPieces[$pieceType] = array_values($opponentPieces[$pieceType]);
+                        break 2;
+                    }
+                }
+            }
+
             // Trouver et promouvoir le pion
+            $pawnFound = false;
             foreach ($pieces['pawn'] as $k => $piece) {
                 if ($piece['position'] === $originPiece) {
                     $nbMovesPawn = $piece['nbMoves'];
@@ -519,11 +603,25 @@ switch ($action) {
                     ];
                     // Réindexer le tableau des pions
                     $pieces['pawn'] = array_values($pieces['pawn']);
+                    $pawnFound = true;
                     break;
                 }
             }
+
+            if (!$pawnFound) {
+                echo json_encode(['error' => 'Pion introuvable pour la promotion']);
+                return null;
+            }
+
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
             $json['round'] += 1;
+            $json['history'][] = [
+                'playerIndex' => $index,
+                'origin' => $originPiece,
+                'destination' => $destinationPiece,
+                'pieceName' => $finalPiece,
+                'tag' => 'promotion'
+            ];
             echo json_encode(['success' => true, 'gameState' => $json]);
             return $json;
         });
@@ -555,6 +653,7 @@ switch ($action) {
         processRoom($roomId, function ($json) use ($index) {
             $json['status'] = 'round_end';
             $json['lastUpdate'] = -1;
+            $json['history'] = [];
             $json['roundStats'] = [
                 'winnerIndex' => ($index + 1) % count($json['players']),
                 'reason' => 'abandon'
