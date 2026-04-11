@@ -353,10 +353,30 @@ switch ($action) {
                     break;
                 
                 case "en_passant":
-                    # code...
-                    echo json_encode(["error" => "Not implemented"]);
+                    $takenPiece = null;
+                    $opponentPieces = &$json['players'][1 - $index]['pieces'];
+                    $capturedPieceType = "pawn";
+                    $capturedPieceIndex = null;
+                    $offset = ($player['color'] === 'white') ? -1 : 1; // Les blancs prennent vers le haut, les noirs vers le bas
+                    $indexOpponentPawn = $destination[0] . '-' . ($destination[2] + $offset); // Position du pion adverse à prendre
+                    foreach ($opponentPieces[$capturedPieceType] as $opponentPieceName => &$opponentPiece) {
+                        if ($opponentPiece['position'] === $indexOpponentPawn && $opponentPiece['lastRoundPlay'] === $json['round'] - 1) {
+                            $takenPiece = $opponentPiece;
+                            $capturedPieceIndex = $opponentPieceName;
+                            break;
+                        }
+                    }
+                    
+                    if (!$takenPiece) {
+                        echo json_encode(['error' => 'Aucun pion à prendre en passant à cette position !']);
+                        return null;
+                    }
+                    unset($opponentPieces[$capturedPieceType][$capturedPieceIndex]); // Supprime la pièce prise
+                    $opponentPieces[$capturedPieceType] = array_values($opponentPieces[$capturedPieceType]);
+                    
+                    $movedPiece = movePiece($pieces, $pieceName, $origin, $destination, $json);
                     break;
-                
+                    
                 case "castling":
                     $movedPiece = castlePieces($pieces, $origin, $destination, $json);
                     if (!$movedPiece) {
@@ -365,24 +385,9 @@ switch ($action) {
                     }
                     break;
                 
-                case "promotion":
-                    # code...
-                    echo json_encode(["error" => "Not implemented"]);
-                    break;
-                
-                case "checkmate":
-                    # code...
-                    echo json_encode(["error" => "Not implemented"]);
-                    break;
-                
-                case "check":
-                    # code...
-                    echo json_encode(["error" => "Not implemented"]);
-                    break;
-                
                 default:
-                    # code...
-                    break;
+                    echo json_encode(["error" => "Tag de mouvement inconnu"]);
+                    return null;
             }
             // On passe au joueur suivant
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);

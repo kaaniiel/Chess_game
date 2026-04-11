@@ -6,13 +6,20 @@ function addCellClickListener(cellElement, color) {
       // Check if any child has class "canBeSelected"
       Array.from(cellElement.children).forEach((element) => {
         if (element.className === "canBeSelected") {
-          playPiece(
-            `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
-            cellElement.id,
-            element.data["piece"],
-            element.data["tag"],
-
-          ); // Call the function to move the piece in chess.js
+          if (element.data["tag"] === CHESS_TAGS.PROMOTION) {
+            showPromotionScreen(
+              `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
+              cellElement.id,
+            );
+          } else {
+            playPiece(
+              `cell-${element.data["xpos"]}-${element.data["ypos"]}`,
+              cellElement.id,
+              element.data["piece"],
+              element.data["tag"],
+  
+            ); // Call the function to move the piece in chess.js
+          }
           return;
         }
       });
