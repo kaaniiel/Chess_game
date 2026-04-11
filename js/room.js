@@ -1,5 +1,5 @@
 // --- VARIABLES GLOBALES COMMUNES ---
-const turnSound = new Audio("../Base/sons/pop.mp3");
+const turnSound = new Audio("../Chess/sons/pop.mp3");
 turnSound.volume = 0.3;
 let isMuted = false;
 
@@ -69,7 +69,7 @@ function saveSession(rid, idx, name) {
 function createGame() {
   let name = document.getElementById("username").value.trim();
   if (!name) return showError("Veuillez entrer un pseudo !");
-  fetch(`Base/api.php?action=create&name=${encodeURIComponent(name)}`)
+  fetch(`Chess/api.php?action=create&name=${encodeURIComponent(name)}`)
     .then((r) => {
       let tmp = r.json();
       return tmp;
@@ -97,7 +97,7 @@ function joinGame(roomId = null) {
     return showError("Code manquant");
   }
 
-  fetch(`Base/api.php?action=join&roomId=${c}&name=${encodeURIComponent(inputName)}`)
+  fetch(`Chess/api.php?action=join&roomId=${c}&name=${encodeURIComponent(inputName)}`)
     .then((r) => r.json())
     .then((d) => {
       if (d.error) {
@@ -117,7 +117,7 @@ function leaveLobby() {
   showConfirm("Quitter la partie ?", function () {
     if (myRoomId && myName) {
       fetch(
-        `Base/api.php?action=leave&roomId=${myRoomId}&name=${encodeURIComponent(myName)}`,
+        `Chess/api.php?action=leave&roomId=${myRoomId}&name=${encodeURIComponent(myName)}`,
       ).finally(() => {
         sessionStorage.clear();
         window.location.reload();
@@ -133,12 +133,12 @@ function launchGame() {
   // Reset spécifique Tarot si besoin (variable globale définie dans tarot.js)
   if (typeof window.hasSeenDog !== "undefined") window.hasSeenDog = false;
 
-  fetch(`Base/api.php?action=startRound&roomId=${myRoomId}`);
+  fetch(`Chess/api.php?action=startRound&roomId=${myRoomId}`);
 }
 
 function cancelGame() {
   showConfirm("Annuler la partie ?", () => {
-    fetch(`Base/api.php?action=cancelGame&roomId=${myRoomId}`);
+    fetch(`Chess/api.php?action=cancelGame&roomId=${myRoomId}`);
   });
 }
 

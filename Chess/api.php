@@ -99,6 +99,77 @@ function generatePieces()
     return $board;
 }
 
+function movePiece(&$playerPieces, &$pieceName, &$origin, &$destination, &$json) {
+    $pieceCategory = &$playerPieces[$pieceName] ?? [];
+    foreach ($pieceCategory as &$piece) {
+        if ($piece['position'] === $origin) {
+            $piece['position'] = $destination;
+            $piece['nbMoves'] += 1;
+            $piece['lastRoundPlay'] = $json['round'];
+            return True;
+        }
+    }
+    return False;
+}
+
+function castlePieces(&$playerPieces, $origin, $destination, $json)
+{
+    $originParts = explode('-', $origin);
+    $destinationParts = explode('-', $destination);
+
+    if (count($originParts) !== 2 || count($destinationParts) !== 2) {
+        return false;
+    }
+
+    $rank = $originParts[1];
+    $destinationFile = $destinationParts[0];
+
+    if ($destinationFile === 'G') {
+        $rookOrigin = 'H-' . $rank;
+        $rookDestination = 'F-' . $rank;
+    } elseif ($destinationFile === 'C') {
+        $rookOrigin = 'A-' . $rank;
+        $rookDestination = 'D-' . $rank;
+    } else {
+        return false;
+    }
+
+    $kingIndex = null;
+    if (!isset($playerPieces['king'])) {
+        return false;
+    }
+    foreach ($playerPieces['king'] as $k => $king) {
+        if ($king['position'] === $origin) {
+            $kingIndex = $k;
+            break;
+        }
+    }
+
+    $rookIndex = null;
+    if (!isset($playerPieces['rook'])) {
+        return false;
+    }
+    foreach ($playerPieces['rook'] as $k => $rook) {
+        if ($rook['position'] === $rookOrigin) {
+            $rookIndex = $k;
+            break;
+        }
+    }
+
+    if ($kingIndex === null || $rookIndex === null) {
+        return false;
+    }
+
+    $playerPieces['king'][$kingIndex]['position'] = $destination;
+    $playerPieces['king'][$kingIndex]['nbMoves'] += 1;
+    $playerPieces['king'][$kingIndex]['lastRoundPlay'] = $json['round'];
+
+    $playerPieces['rook'][$rookIndex]['position'] = $rookDestination;
+    $playerPieces['rook'][$rookIndex]['nbMoves'] += 1;
+    $playerPieces['rook'][$rookIndex]['lastRoundPlay'] = $json['round'];
+
+    return true;
+}
 // --- ROUTER ---
 
 $action = $_REQUEST['action'] ?? '';
@@ -121,7 +192,8 @@ switch ($action) {
             'turnIndex' => 0,
             'round' => 0,
             'lastUpdate' => time(),
-            'roundStats' => []
+            'roundStats' => [],
+            'history' => []
         ];
 
         file_put_contents($dataDir . 'room_' . $roomId . '.json', json_encode($gameState));
@@ -219,7 +291,9 @@ switch ($action) {
 
         $index = (int) $_REQUEST['index'];
 
-        processRoom($roomId, function ($json) use ($index, $origin, $destination) {
+        $pieceName = $_REQUEST['pieceName'] ?? '';
+        $tag = $_REQUEST['tag'] ?? '';
+        processRoom($roomId, function ($json) use ($index, $origin, $destination, $pieceName, $tag) {
             // 1. VERIFICATION DU TOUR (Activée)
             if ($json['turnIndex'] !== $index) {
                 echo json_encode(['error' => 'Ce n\'est pas votre tour !']);
@@ -228,84 +302,106 @@ switch ($action) {
             $player = &$json['players'][$index];
             $pieces = &$player['pieces'];
 
-            $pieceName = "";
-            $pieceFound = null;
-
-            // Recherche de la pièce à déplacer
-            foreach ($pieces as $type => &$pieceArray) {
-                foreach ($pieceArray as $k => $piece) {
-                    if ($piece['position'] === $origin) {
-                        $pieceFound = $piece;
-                        $pieces[$type][$k]['position'] = $destination;
-                        $pieces[$type][$k]['nbMoves'] += 1;
-                        $pieces[$type][$k]['lastRoundPlay'] = $json['round'];
-                        $pieceName = $type;
-                        break 2; // Sortir des deux boucles
+            /* $CHESS_TAGS = array(
+                'EN_PASSANT' => "en_passant",
+                'CASTLING' => "castling",
+                'PROMOTION' => "promotion",
+                'CHECK' => "check",
+                'CHECKMATE' => "checkmate",
+                'MOVE' => "move",
+                'TAKE_PIECE' => "take_piece",
+            ); */
+            $movedPiece = null;
+            switch ($tag) {
+                case "move":
+                    // 
+                    $movedPiece = movePiece($pieces, $pieceName, $origin, $destination, $json);
+                    if (!$movedPiece) {
+                        echo json_encode(['error' => 'Aucune pièce à déplacer à cette position !']);
+                        return null;
                     }
-                }
-            }
-
-            if (!$pieceFound) {
-                echo json_encode(['error' => 'Pièce introuvable']);
-                return null;
-            }
-
-            // En passant
-            if ($pieceName === 'pawn') {
-                $destinationPawn = str_split($destination);
-                $behindPawnPos = $destinationPawn[0] . "-" . ($destinationPawn[2] + ($player['color'] === 'white' ? -1 : 1));
-
-                foreach ($json['players'] as $pIndex => &$p) {
-                    if ($pIndex !== $index) {
-                        $opponentPieces = &$p['pieces'];
-                        foreach ($opponentPieces['pawn'] as $k => $piece) {
-                            if ($piece['position'] === $behindPawnPos && $piece['lastRoundPlay'] === $json['round'] - 1) {
-                                // Capturer la pièce
-                                unset($opponentPieces['pawn'][$k]);
-                                // Réindexer le tableau pour éviter les trous
-                                $opponentPieces['pawn'] = array_values($opponentPieces['pawn']);
-                                break 2; // Sortir des deux boucles
+                    break;
+                
+                case "take_piece":
+                    $takenPiece = null;
+                    $opponentPieces = &$json['players'][1 - $index]['pieces'];
+                    $capturedPieceType = null;
+                    $capturedPieceIndex = null;
+                    foreach ($opponentPieces as $piece => &$value) {
+                        foreach ($value as $k => &$p) {
+                            if ($p['position'] === $destination) {
+                                $takenPiece = $p;
+                                $capturedPieceType = $piece;
+                                $capturedPieceIndex = $k;
+                                break 2; // Sort des deux boucles
                             }
                         }
                     }
-                }
-            }
-            // Castling
-            if ($pieceName === 'king' && $pieces['king'][0]['nbMoves'] === 1) {
-                $rookOrigin = ($destination[0] === 'G' ? 'H' : 'A') . '-' . $origin[2];
-                $rookDestination = ($destination[0] === 'G' ? 'F' : 'C') . '-' . $origin[2];
-
-                foreach ($pieces['rook'] as $k => $rook) {
-                    if ($rook['position'] === $rookOrigin) {
-                        $pieces['rook'][$k]['position'] = $rookDestination;
-                        $pieces['rook'][$k]['nbMoves'] += 1;
-                        break;
+                    if (!$takenPiece) {
+                        echo json_encode(['error' => 'Aucune pièce à prendre à cette position !']);
+                        return null;
                     }
-                }
-            }
-            // on verifie si une pièce adverse est capturée
-            foreach ($json['players'] as $pIndex => &$p) {
-                if ($pIndex !== $index) {
-                    $opponentPieces = &$p['pieces'];
-                    foreach ($opponentPieces as $type => &$pieceArray) {
-                        foreach ($pieceArray as $k => $piece) {
-                            if ($piece['position'] === $destination) {
-                                // Capturer la pièce
-                                unset($opponentPieces[$type][$k]);
-                                // Réindexer le tableau pour éviter les trous
-                                $opponentPieces[$type] = array_values($opponentPieces[$type]);
-                                break 2; // Sortir des deux boucles
-                            }
+
+                    $movedPiece = movePiece($pieces, $pieceName, $origin, $destination, $json);
+                    if (!$movedPiece) {
+                        echo json_encode(['error' => 'Aucune pièce à déplacer à cette position !']);
+                        return null;
+                    }
+                    unset($opponentPieces[$capturedPieceType][$capturedPieceIndex]); // Supprime la pièce prise
+                    $opponentPieces[$capturedPieceType] = array_values($opponentPieces[$capturedPieceType]);
+                    
+                    break;
+                
+                case "en_passant":
+                    $takenPiece = null;
+                    $opponentPieces = &$json['players'][1 - $index]['pieces'];
+                    $capturedPieceType = "pawn";
+                    $capturedPieceIndex = null;
+                    $offset = ($player['color'] === 'white') ? -1 : 1; // Les blancs prennent vers le haut, les noirs vers le bas
+                    $indexOpponentPawn = $destination[0] . '-' . ($destination[2] + $offset); // Position du pion adverse à prendre
+                    foreach ($opponentPieces[$capturedPieceType] as $opponentPieceName => &$opponentPiece) {
+                        if ($opponentPiece['position'] === $indexOpponentPawn && $opponentPiece['lastRoundPlay'] === $json['round'] - 1) {
+                            $takenPiece = $opponentPiece;
+                            $capturedPieceIndex = $opponentPieceName;
+                            break;
                         }
                     }
-                }
+                    
+                    if (!$takenPiece) {
+                        echo json_encode(['error' => 'Aucun pion à prendre en passant à cette position !']);
+                        return null;
+                    }
+                    unset($opponentPieces[$capturedPieceType][$capturedPieceIndex]); // Supprime la pièce prise
+                    $opponentPieces[$capturedPieceType] = array_values($opponentPieces[$capturedPieceType]);
+                    
+                    $movedPiece = movePiece($pieces, $pieceName, $origin, $destination, $json);
+                    break;
+                    
+                case "castling":
+                    $movedPiece = castlePieces($pieces, $origin, $destination, $json);
+                    if (!$movedPiece) {
+                        echo json_encode(['error' => 'Roque impossible']);
+                        return null;
+                    }
+                    break;
+                
+                default:
+                    echo json_encode(["error" => "Tag de mouvement inconnu"]);
+                    return null;
             }
-
             // On passe au joueur suivant
             $json['turnIndex'] = ($json['turnIndex'] + 1) % count($json['players']);
             $json['round'] += 1;
             $json['lastUpdate'] = time();
-            echo json_encode(['success' => true, 'gameState' => $json]);
+            $json['history'][] = [
+                'playerIndex' => $index,
+                'origin' => $origin,
+                'destination' => $destination,
+                'pieceName' => $pieceName,
+                'tag' => $tag
+            ];
+            $hasMovedPiece = $movedPiece ? "has moved" : "have not moved";
+            echo json_encode(['success' => true, 'tag' => $tag, 'infos' => "piece $pieceName $hasMovedPiece from $origin to $destination",  'gameState' => $json]);
             return $json;
         });
         break;
